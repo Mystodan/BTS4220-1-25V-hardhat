@@ -1,9 +1,9 @@
 import { useEffect, useState, useRef } from "react";
 
-const Task = ({ task, todoWeb3, provider, id }) => {
+const Task = ({ task, todoWeb3, provider, id, onDelete }) => {
   const [completed, setCompleted] = useState(false);
   const [menuOpened, setMenuOpened] = useState(false);
-  const task_id = "task" + id + 1;
+  const menuRef = useRef(null);
 
   const handleChange = async () => {
     const signer = await provider.getSigner();
@@ -16,6 +16,22 @@ const Task = ({ task, todoWeb3, provider, id }) => {
     setCompleted(task.completed);
   }, [task.completed]);
 
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setMenuOpened(false);
+      }
+    };
+    if (menuOpened) {
+      document.addEventListener("mousedown", handleClickOutside);
+    } else {
+      document.removeEventListener("mousedown", handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [menuOpened]);
+
   return (
     <li className="task">
       <label htmlFor={id}>
@@ -27,7 +43,7 @@ const Task = ({ task, todoWeb3, provider, id }) => {
         />
         <p className={completed ? "checked" : ""}>{task.content}</p>
       </label>
-      <div className="settings">
+      <div className="settings" ref={menuRef}>
         <i
           onClick={() => setMenuOpened(true)}
           className="uil uil-ellipsis-h"
@@ -36,7 +52,7 @@ const Task = ({ task, todoWeb3, provider, id }) => {
           <li>
             <i className="uil uil-pen"></i>Edit
           </li>
-          <li>
+          <li onClick={() => onDelete(id)}>
             <i className="uil uil-trash"></i>Delete
           </li>
         </ul>

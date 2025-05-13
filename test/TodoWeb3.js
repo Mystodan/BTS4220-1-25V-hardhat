@@ -30,6 +30,44 @@ describe("TodoWeb3", () => {
     });
   });
 
+
+   describe("Delete Task", async () => {
+    beforeEach(async () => {
+      // Create a second task
+      let transaction = await todoWeb3.connect(deployer).createTask("Task 2");
+      await transaction.wait();
+    });
+
+    it("deletes the specified task", async () => {
+      // Delete the first task
+      let transaction = await todoWeb3.connect(deployer).deleteTask(1);
+      await transaction.wait();
+
+      // Fetch the deleted task
+      const deletedTask = await todoWeb3.tasks(1);
+      expect(deletedTask.content).to.be.equal(""); // Should be empty string after deletion
+
+      // The second task should still exist
+      const task2 = await todoWeb3.tasks(2);
+      expect(task2.content).to.be.equal("Task 2");
+    });
+
+    it("emits a TaskDeleted event", async () => {
+      await expect(todoWeb3.connect(deployer).deleteTask(1))
+        .to.emit(todoWeb3, "TaskDeleted")
+        .withArgs(1);
+    });
+
+    it("reverts if task does not exist", async () => {
+      // Delete first
+      let transaction = await todoWeb3.connect(deployer).deleteTask(1);
+      await transaction.wait();
+
+      // Try deleting again
+      await expect(todoWeb3.connect(deployer).deleteTask(1)).to.be.revertedWith("Task already deleted");
+    });
+  });
+
   describe("Complete Task", async () => {
     // Completes task
     beforeEach(async () => {

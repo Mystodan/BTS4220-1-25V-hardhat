@@ -47,6 +47,9 @@ function App() {
     const tasks = [];
     for (var i = 1; i <= taskCount; i++) {
       const task = await todoWeb3.tasks(i);
+      if (task.content === "" && !task.content) {
+        continue;
+      };
       tasks.push(task);
     }
     console.log(tasks);
@@ -64,8 +67,17 @@ function App() {
     await addTask(newTask);
   };
 
+  const deleteTask = async (id) => {
+    // Delete task
+    const signer = await provider.getSigner();
+    let transaction = await todoWeb3.connect(signer).deleteTask(id);
+    await transaction.wait();
+    await getAllTasks(todoWeb3);
+};
+
   const addTask = async (t) => {
     // Add task
+    
     const signer = await provider.getSigner();
     let transaction = await todoWeb3.connect(signer).createTask(t);
     await transaction.wait();
@@ -174,6 +186,7 @@ function App() {
               provider={provider}
               id={index + 1}
               key={index}
+              onDelete={deleteTask}
             />
           ))}
         </ul>

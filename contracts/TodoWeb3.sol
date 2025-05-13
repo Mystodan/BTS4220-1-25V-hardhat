@@ -12,9 +12,19 @@ contract TodoWeb3 {
 
     mapping(uint256 => Task) public tasks;
 
+
     event TaskCreated(uint256 id, string content, bool completed);
 
     event TaskCompleted(uint256 id, bool completed);
+
+    event TaskDeleted(uint256 id);
+
+    function deleteTask(uint256 _id) public{
+        require(_id > 0 && _id <= taskCount, "Invalid task id");
+        require(bytes(tasks[_id].content).length > 0, "Task already deleted");
+        delete tasks[_id];
+        emit TaskDeleted(_id);
+    }
 
     function createTask(string memory _content) public {
         taskCount++;
@@ -30,7 +40,7 @@ contract TodoWeb3 {
     function clearCompletedTasks() public {
         for (uint256 i = 1; i <= taskCount; i++) {
             if (tasks[i].completed) {
-                // tasks[i] = Task(tasks[i].id, "", false);
+                tasks[i] = Task(tasks[i].id, "", false);
                 delete tasks[i];
                 taskCount--;
             }
