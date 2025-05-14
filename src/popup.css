@@ -1,0 +1,88 @@
+/*
+  popup.css
+  ---------
+  Styles for the modal popup overlay and content used to display task details.
+  Ensures the popup is centered, visually distinct, and accessible above all other content.
+*/
+
+/*
+  .popup-overlay
+  --------------
+  - Fixed position to cover the entire viewport.
+  - Semi-transparent dark background for focus and modal effect.
+  - Flexbox centering for the popup content.
+  - High z-index to ensure it appears above all other elements.
+*/
+.popup-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0,0,0,0.4); /* Dimmed background */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}
+
+/*
+  .popup-content
+  --------------
+  - White, rounded, and shadowed box for the popup.
+  - Responsive width, padding, and font styling.
+  - Fade-in animation for smooth appearance.
+*/
+.popup-content {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.18);
+  padding: 2rem 2.5rem;
+  min-width: 320px;
+  max-width: 90vw;
+  position: relative;
+  color: #222;
+  font-family: inherit;
+  animation: fadeIn 0.2s;
+}
+
+/*
+  .popup-content h3
+  -----------------
+  - Styles for the popup title.
+*/
+.popup-content h3 {
+  margin-top: 0;
+  margin-bottom: 1.2rem;
+  font-weight: 600;
+  font-size: 1.3rem;
+}
+
+/*
+  .popup-content button
+  ---------------------
+  - Styled button for closing the popup.
+  - Rounded, colored, and with hover/active feedback.
+*/
+.popup-content button {
+  background: #ff9800;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 0.5rem 1.2rem;
+  font-weight: 500;
+  font-size: 1rem;
+  cursor: pointer;
+  margin-top: 0.5rem;
+  transition: background 0.2s;
+}
+
+/*
+  @keyframes fadeIn
+  -----------------
+  - Animation for smooth popup appearance.
+*/
+@keyframes fadeIn {
+  from { opacity: 0; transform: scale(0.98); }
+  to { opacity: 1; transform: scale(1); }
+}

@@ -18,13 +18,17 @@ async function main() {
   console.log(`Deployed task contract at: ${todoWeb3.address}`);
 
   // Creating a list of tasks
-  const tasks = ["Create a video on GPT", "Complete Dapp University course"];
+  // Now supports public/private tasks
+  const tasks = [
+    { content: "Create a video on GPT", is_private: false },
+    { content: "Complete Dapp University course", is_private: true }
+  ];
 
   // List tasks
   for (let i = 0; i < tasks.length; i++) {
-    let transaction = await todoWeb3.connect(deployer).createTask(tasks[i]);
+    let transaction = await todoWeb3.connect(deployer).createTask(tasks[i].content, tasks[i].is_private);
     await transaction.wait();
-    console.log(`Created task${i + 1}: ${tasks[i]}`);
+    console.log(`Created task${i + 1}: ${tasks[i].content} (private: ${tasks[i].is_private})`);
   }
 }
 
