@@ -4,7 +4,7 @@ import { ethers } from "ethers";
 // Components
 import Navigation from "./components/Navigation";
 import Task from "./components/Task";
-// import Logic from "./components/logic";
+//import Logic from "./components/logic";
 
 // ABIs
 import TodoWeb3 from "./abis/TodoWeb3.json";
@@ -184,8 +184,8 @@ function App() {
               task={task}
               todoWeb3={todoWeb3}
               provider={provider}
-              id={index + 1}
-              key={index}
+              id={task.id}
+              key={task.id}
               onDelete={deleteTask}
             />
           ))}
