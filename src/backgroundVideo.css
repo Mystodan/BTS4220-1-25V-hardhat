@@ -1,0 +1,39 @@
+/*
+  backgroundVideo.css
+  ------------------
+  Styles for the full-screen, looping YouTube background video.
+  Ensures the video covers the viewport, stretches to fit, and stays behind all app content.
+  Also ensures main app content and popups are always above the video background.
+*/
+
+/* Container for the background video, fixed to cover the entire viewport */
+.background-video-container {
+  position: fixed;           /* Stays fixed while scrolling */
+  top: 0;
+  left: 0;
+  width: 100vw;              /* Full viewport width */
+  height: 100vh;             /* Full viewport height */
+  z-index: -1;               /* Behind all other content */
+  overflow: hidden;          /* Hide overflow from scaling video */
+}
+
+/* The YouTube iframe video itself, centered and stretched to cover the background */
+.background-video {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 100vw;              /* Stretch to viewport width */
+  height: 56.25vw;           /* Maintain 16:9 aspect ratio for YouTube */
+  min-height: 100vh;         /* Ensure it always covers the viewport vertically */
+  min-width: 177.77vh;       /* Ensure it always covers the viewport horizontally */
+  transform: translate(-50%, -50%); /* Center the video */
+  pointer-events: none;      /* Allow clicks to pass through to app content */
+  border: none;
+  background: #000;          /* Fallback background color */
+}
+
+/* Ensure main app content and popups are always above the background video */
+.wrapper, .popup-overlay {
+  position: relative;
+  z-index: 1;
+}
