@@ -41,21 +41,12 @@ function App() {
     };
 
     const getAllTasks = async (todoWeb3) => {
-        console.log(todoWeb3);
-        const taskCount = await todoWeb3.taskCount();
-        setTaskCount(taskCount);
-
-        const tasks = [];
-        for (var i = 1; i <= taskCount; i++) {
-            const task = await todoWeb3.tasks(i);
-            if (task.content === "" && !task.content) {
-                continue;
-            }
-            tasks.push(task);
-        }
-        console.log(tasks);
+        // Use the getTasks() view function from the contract to fetch all visible tasks
+        const tasks = await todoWeb3.getTasks();
+        console.log("Tasks: ", tasks);
         setTasks(tasks);
         setFilteredTasks(tasks);
+        setTaskCount(tasks.length);
     };
 
     const handleChange = (e) => {
@@ -76,15 +67,17 @@ function App() {
         await getAllTasks(todoWeb3);
     };
 
-    const addTask = async (t) => {
-        // Add task
-
+    const addTask = async (t, is_private = false) => {
+        // Add task using the contract's createTask function
         const signer = await provider.getSigner();
-        let transaction = await todoWeb3.connect(signer).createTask(t);
+        // Use the correct ABI signature for createTask
+        let transaction = await todoWeb3
+            .connect(signer)
+            .createTask(t, is_private);
         await transaction.wait();
         setNewTask("");
-
         await getAllTasks(todoWeb3);
+        console.log("Added task: ", t, " - With Private: ", is_private);
     };
 
     const filterTasks = (e) => {
@@ -109,7 +102,7 @@ function App() {
         }
     };
 
-    const handleKeyDown = async (e) => {
+    const handleKeyDown = async (e, priv = false) => {
         if (e.key === "Enter") {
             console.log("do validate");
             let inputTask = e.currentTarget.value;
@@ -127,9 +120,35 @@ function App() {
         await getAllTasks(todoWeb3);
     };
 
+    const addPublicTask = async () => {
+        const textBox = document.getElementById("newTask");
+        const t = textBox.value;
+        await addTask(t, false);
+    };
+
+    const addPrivateTask = async () => {
+        const textBox = document.getElementById("newTask");
+        const t = textBox.value;
+        await addTask(t, true);
+    };
+
     useEffect(() => {
         loadBlockchainData();
     }, []);
+
+    // Listen for contract events and refresh tasks
+    useEffect(() => {
+        if (!todoWeb3) return;
+
+        const refreshTasks = () => getAllTasks(todoWeb3);
+
+        todoWeb3.on("UpdateSignal", refreshTasks);
+
+        // Cleanup listeners on unmount or contract change
+        return () => {
+            todoWeb3.off("UpdateSignal", refreshTasks);
+        };
+    }, [todoWeb3]);
 
     return (
         <>
@@ -146,7 +165,12 @@ function App() {
                         onKeyDown={handleKeyDown}
                         required
                     />
+                    <div>
+                        <button onClick={addPublicTask}>Public</button>
+                        <button onClick={addPrivateTask}>Private</button>
+                    </div>
                 </div>
+
                 <div className="controls">
                     <div className="filters">
                         <span
