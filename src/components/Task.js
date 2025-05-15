@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 
-const Task = ({ task, todoWeb3, provider, id, onDelete, onClick }) => {
+const Task = ({ task, todoWeb3, provider, id, onDelete, onClick, onEdit }) => {
   const [completed, setCompleted] = useState(false);
   const [menuOpened, setMenuOpened] = useState(false);
   const menuRef = useRef(null);
@@ -58,7 +58,7 @@ const Task = ({ task, todoWeb3, provider, id, onDelete, onClick }) => {
         </button>
         <div className="settings" ref={menuRef}>
           <ul className={`task-menu ${menuOpened ? "show" : ""}`} style={{ right: 0 }}>
-            <li>
+            <li onClick={e => { e.stopPropagation(); setMenuOpened(false); if (onEdit) onEdit(task); }}>
               <i className="uil uil-pen"></i>Edit
             </li>
             <li onClick={e => { e.stopPropagation(); onDelete(id); }}>

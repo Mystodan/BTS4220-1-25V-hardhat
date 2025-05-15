@@ -153,6 +153,17 @@ contract TodoWeb3 {
         return publicTasks;
     }
 
+    // --- Edit functionality ---
+    function editTask(uint256 _id, string memory _content) public {
+        require(_id > 0 && _id <= taskCount, "Invalid task id");
+        require(bytes(tasks[_id].content).length > 0, "Task does not exist");
+        if (tasks[_id].is_private) {
+            require(tasks[_id].user == msg.sender, "Not your private task");
+        }
+        // Anyone can edit public tasks
+        tasks[_id].content = _content;
+    }
+
     fallback() external payable {
         // List of harmless selectors to silently revert
        if (
