@@ -52,7 +52,9 @@ function App() {
         handleKeyDown,
         handleSubmit,
         paginatedTasks,
-        totalPages
+        totalPages,
+        setUsername,
+        usernames,
     } = useTodoLogic();
 
     return (
@@ -81,6 +83,9 @@ function App() {
                 setCurrentPage={setCurrentPage}
                 totalPages={totalPages}
                 maxTasks={MAX_TASKS}
+                setUsername={setUsername}
+                getMyTasks={getMyTasks}
+                usernames={usernames}
             />
         </>
     );

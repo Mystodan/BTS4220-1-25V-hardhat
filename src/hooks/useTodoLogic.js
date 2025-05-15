@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { ethers } from "ethers";
+import { Contract, ethers } from "ethers";
 import TodoWeb3 from "../abis/TodoWeb3.json";
 import config from "../config.json";
 
@@ -9,7 +9,7 @@ export const FilterType = Object.freeze({
     PUBLIC: "public",
     ALL: "all",
     PENDING: "pending",
-    COMPLETED: "completed"
+    COMPLETED: "completed",
 });
 
 export function useTodoLogic() {
@@ -25,6 +25,8 @@ export function useTodoLogic() {
     const [popupTask, setPopupTask] = useState(null);
     const clearBtnRef = useRef(null);
     const [currentPage, setCurrentPage] = useState(1);
+    const [usernames, setUsernames] = useState({});
+    const [usernameCount, setUsernameCount] = useState({});
     const MAX_TASKS = 8;
     const TASKS_PER_PAGE = 8;
 
@@ -34,14 +36,18 @@ export function useTodoLogic() {
             setAccount(null);
             return false;
         }
-        const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+        const accounts = await window.ethereum.request({
+            method: "eth_accounts",
+        });
         if (accounts && accounts.length > 0) {
             setAccount(accounts[0]);
             await loadBlockchainData(accounts[0]);
             return true;
         }
         try {
-            const reqAccounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+            const reqAccounts = await window.ethereum.request({
+                method: "eth_requestAccounts",
+            });
             if (reqAccounts && reqAccounts.length > 0) {
                 setAccount(reqAccounts[0]);
                 await loadBlockchainData(reqAccounts[0]);
@@ -66,7 +72,9 @@ export function useTodoLogic() {
         );
         setTodoWeb3(todoWeb3);
         const accounts = await provider.listAccounts();
-        const accountToUse = selectedAccount || (accounts && accounts.length > 0 ? accounts[0] : null);
+        const accountToUse =
+            selectedAccount ||
+            (accounts && accounts.length > 0 ? accounts[0] : null);
         if (accountToUse) setAccount(accountToUse);
         await getMyTasks(todoWeb3);
     };
@@ -76,11 +84,21 @@ export function useTodoLogic() {
         if (!provider || !todoWeb3Instance) return;
         const signer = provider.getSigner();
         const myTasks = await todoWeb3Instance.connect(signer).getMyTasks();
-        const mappedTasks = myTasks.map(task => ({
+        const mappedTasks = myTasks.map((task) => ({
             ...task,
             id: task.id && task.id._isBigNumber ? Number(task.id) : task.id,
-            createdAt: task.createdAt && task.createdAt._isBigNumber ? Number(task.createdAt) : (typeof task.createdAt === 'number' ? task.createdAt : undefined),
-            completedAt: task.completedAt && task.completedAt._isBigNumber ? Number(task.completedAt) : (typeof task.completedAt === 'number' ? task.completedAt : undefined)
+            createdAt:
+                task.createdAt && task.createdAt._isBigNumber
+                    ? Number(task.createdAt)
+                    : typeof task.createdAt === "number"
+                    ? task.createdAt
+                    : undefined,
+            completedAt:
+                task.completedAt && task.completedAt._isBigNumber
+                    ? Number(task.completedAt)
+                    : typeof task.completedAt === "number"
+                    ? task.completedAt
+                    : undefined,
         }));
         setTasks(mappedTasks);
         applyCurrentFilter(mappedTasks, undefined, keepPage);
@@ -92,7 +110,11 @@ export function useTodoLogic() {
         const filter = filterOverride || activeFilter;
         if (filter === FilterType.PRIVATE) {
             filtered = tasksArr.filter(
-                (task) => task.is_private && task.user && account && task.user.toLowerCase() === account.toLowerCase()
+                (task) =>
+                    task.is_private &&
+                    task.user &&
+                    account &&
+                    task.user.toLowerCase() === account.toLowerCase()
             );
         } else if (filter === FilterType.PUBLIC) {
             filtered = tasksArr.filter((task) => !task.is_private);
@@ -100,19 +122,30 @@ export function useTodoLogic() {
             filtered = tasksArr.filter(
                 (task) =>
                     !task.is_private ||
-                    (task.is_private && task.user && account && task.user.toLowerCase() === account.toLowerCase())
+                    (task.is_private &&
+                        task.user &&
+                        account &&
+                        task.user.toLowerCase() === account.toLowerCase())
             );
         } else if (filter === FilterType.PENDING) {
             filtered = tasksArr.filter(
                 (task) =>
                     !task.completed &&
-                    (!task.is_private || (task.is_private && task.user && account && task.user.toLowerCase() === account.toLowerCase()))
+                    (!task.is_private ||
+                        (task.is_private &&
+                            task.user &&
+                            account &&
+                            task.user.toLowerCase() === account.toLowerCase()))
             );
         } else if (filter === FilterType.COMPLETED) {
             filtered = tasksArr.filter(
                 (task) =>
                     task.completed &&
-                    (!task.is_private || (task.is_private && task.user && account && task.user.toLowerCase() === account.toLowerCase()))
+                    (!task.is_private ||
+                        (task.is_private &&
+                            task.user &&
+                            account &&
+                            task.user.toLowerCase() === account.toLowerCase()))
             );
         }
         setFilteredTasks(filtered);
@@ -124,14 +157,23 @@ export function useTodoLogic() {
 
     // --- Task Actions ---
     const addTask = async (t, is_private = false) => {
-        const userTasks = tasks.filter(task => task.user && account && task.user.toLowerCase() === account.toLowerCase());
+        const userTasks = tasks.filter(
+            (task) =>
+                task.user &&
+                account &&
+                task.user.toLowerCase() === account.toLowerCase()
+        );
         if (userTasks.length >= MAX_TASKS) {
-            alert(`You can only have up to ${MAX_TASKS} tasks. Please delete a task before adding a new one.`);
+            alert(
+                `You can only have up to ${MAX_TASKS} tasks. Please delete a task before adding a new one.`
+            );
             return;
         }
         if (!t || t.trim() === "") return;
         const signer = await provider.getSigner();
-        let transaction = await todoWeb3.connect(signer).createTask(t.trim(), is_private);
+        let transaction = await todoWeb3
+            .connect(signer)
+            .createTask(t.trim(), is_private);
         await transaction.wait();
         setNewTask("");
         await getMyTasks(todoWeb3, true);
@@ -148,12 +190,36 @@ export function useTodoLogic() {
         if (!todoWeb3 || !provider) return;
         try {
             const signer = await provider.getSigner();
-            let transaction = await todoWeb3.connect(signer).clearCompletedTasks();
+            let transaction = await todoWeb3
+                .connect(signer)
+                .clearCompletedTasks();
             await transaction.wait();
             await getMyTasks(todoWeb3);
         } catch (err) {
             window.console.error("Failed to clear completed tasks:", err);
         }
+    };
+
+    // --- Pseudonym Fetching ---
+    // MARK: getUsernameCount
+    const getUsernameCount = async () => {
+        if (!todoWeb3) return [];
+        const signer = provider.getSigner();
+        const tmpCount = await todoWeb3.connect(signer).getPseudonymLen();
+        setUsernameCount(tmpCount.toNumber());
+    };
+
+    const updateUserDict = async () => {
+        if (usernameCount < 1) return;
+        const signer = provider.getSigner();
+        let tempDict = {};
+        for (let i = 0; i < usernameCount; i++) {
+            const tmpAdd = await todoWeb3.connect(signer).pseudo_add(i);
+            const tmpUsr = await todoWeb3.connect(signer).pseudo_usr(i);
+            //console.log(tmpAdd, " : ", tmpUsr);
+            tempDict[tmpAdd] = tmpUsr;
+        }
+        setUsernames(tempDict);
     };
 
     // --- UI Event Handlers ---
@@ -178,6 +244,18 @@ export function useTodoLogic() {
         await addTask(newTask, isPrivate);
     };
 
+    const setUsername = async () => {
+        const signer = await provider.getSigner();
+        const textField = document.getElementById("newTask");
+        console.log("New Username: ", textField.value);
+        let transaction = await todoWeb3
+            .connect(signer)
+            .setUsername(textField.value);
+        await transaction.wait();
+        textField.value = "";
+        await getMyTasks(todoWeb3);
+    };
+
     // --- Effects ---
     // Listen for account changes
     useEffect(() => {
@@ -192,26 +270,34 @@ export function useTodoLogic() {
                 setFilteredTasks([]);
             }
         };
-        window.ethereum.on('accountsChanged', handleAccountsChanged);
+        window.ethereum.on("accountsChanged", handleAccountsChanged);
         return () => {
-            window.ethereum.removeListener('accountsChanged', handleAccountsChanged);
+            window.ethereum.removeListener(
+                "accountsChanged",
+                handleAccountsChanged
+            );
         };
     }, []);
 
     // Listen for contract events
     useEffect(() => {
+        getUsernameCount();
         if (!todoWeb3) return;
         const onTaskCreated = (id, content, completed, event) => {
-            if (event && event.args && event.address === todoWeb3.address) getMyTasks(todoWeb3);
+            if (event && event.args && event.address === todoWeb3.address)
+                getMyTasks(todoWeb3);
         };
         const onTaskCompleted = (id, completed, event) => {
-            if (event && event.args && event.address === todoWeb3.address) getMyTasks(todoWeb3);
+            if (event && event.args && event.address === todoWeb3.address)
+                getMyTasks(todoWeb3);
         };
         const onTaskDeleted = (id, event) => {
-            if (event && event.args && event.address === todoWeb3.address) getMyTasks(todoWeb3);
+            if (event && event.args && event.address === todoWeb3.address)
+                getMyTasks(todoWeb3);
         };
         const onTasksCleared = (id_arr, event) => {
-            if (event && event.args && event.address === todoWeb3.address) getMyTasks(todoWeb3);
+            if (event && event.args && event.address === todoWeb3.address)
+                getMyTasks(todoWeb3);
         };
         todoWeb3.on("TaskCreated", onTaskCreated);
         todoWeb3.on("TaskCompleted", onTaskCompleted);
@@ -231,22 +317,25 @@ export function useTodoLogic() {
         loadBlockchainData();
     }, []);
 
-    // Debug: log clear completed button ref and state
     useEffect(() => {
-        if (clearBtnRef.current) {
-            console.log('Clear completed button ref:', clearBtnRef.current);
-            console.log('Button disabled:', clearBtnRef.current.disabled);
-        }
-    });
+        updateUserDict();
+    }, [usernameCount]);
 
     // --- Pagination ---
     let visibleTasks = filteredTasks;
     if (activeFilter === FilterType.PRIVATE) {
         visibleTasks = filteredTasks.filter(
-            (task) => task.is_private && task.user && account && task.user.toLowerCase() === account.toLowerCase()
+            (task) =>
+                task.is_private &&
+                task.user &&
+                account &&
+                task.user.toLowerCase() === account.toLowerCase()
         );
     }
-    const paginatedTasks = visibleTasks.slice((currentPage - 1) * TASKS_PER_PAGE, currentPage * TASKS_PER_PAGE);
+    const paginatedTasks = visibleTasks.slice(
+        (currentPage - 1) * TASKS_PER_PAGE,
+        currentPage * TASKS_PER_PAGE
+    );
     const totalPages = Math.ceil(visibleTasks.length / TASKS_PER_PAGE);
 
     // --- Return API ---
@@ -282,6 +371,8 @@ export function useTodoLogic() {
         handleKeyDown,
         handleSubmit,
         paginatedTasks,
-        totalPages
+        totalPages,
+        setUsername,
+        usernames,
     };
 }

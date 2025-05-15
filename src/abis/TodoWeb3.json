@@ -32,12 +32,6 @@
         "internalType": "string",
         "name": "content",
         "type": "string"
-      },
-      {
-        "indexed": false,
-        "internalType": "bool",
-        "name": "completed",
-        "type": "bool"
       }
     ],
     "name": "TaskCreated",
@@ -58,14 +52,7 @@
   },
   {
     "anonymous": false,
-    "inputs": [
-      {
-        "indexed": false,
-        "internalType": "uint256[]",
-        "name": "id_arr",
-        "type": "uint256[]"
-      }
-    ],
+    "inputs": [],
     "name": "TasksCleared",
     "type": "event"
   },
@@ -181,6 +168,19 @@
   },
   {
     "inputs": [],
+    "name": "getPseudonymLen",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
     "name": "getPublicTasks",
     "outputs": [
       {
@@ -237,25 +237,12 @@
         "type": "uint256"
       }
     ],
-    "name": "id_tracker",
+    "name": "pseudo_add",
     "outputs": [
       {
-        "internalType": "uint256",
+        "internalType": "address",
         "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "taskCount",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
+        "type": "address"
       }
     ],
     "stateMutability": "view",
@@ -269,41 +256,37 @@
         "type": "uint256"
       }
     ],
-    "name": "tasks",
+    "name": "pseudo_usr",
+    "outputs": [
+      {
+        "internalType": "string",
+        "name": "",
+        "type": "string"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "string",
+        "name": "_name",
+        "type": "string"
+      }
+    ],
+    "name": "setUsername",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "taskCount",
     "outputs": [
       {
         "internalType": "uint256",
-        "name": "id",
-        "type": "uint256"
-      },
-      {
-        "internalType": "string",
-        "name": "content",
-        "type": "string"
-      },
-      {
-        "internalType": "bool",
-        "name": "completed",
-        "type": "bool"
-      },
-      {
-        "internalType": "address",
-        "name": "user",
-        "type": "address"
-      },
-      {
-        "internalType": "bool",
-        "name": "is_private",
-        "type": "bool"
-      },
-      {
-        "internalType": "uint256",
-        "name": "createdAt",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "completedAt",
+        "name": "",
         "type": "uint256"
       }
     ],
