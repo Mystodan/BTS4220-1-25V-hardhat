@@ -1,9 +1,14 @@
-import React, { useState } from "react";
-import Task from "./Task";
+import React, { useState, useEffect } from "react";
+import Task from "./ui_element/TaskMenu";
 import ViewTaskPopup from "./popups/ViewTaskPopup";
-import NavMenu from "./bars/NavMenu";
 import EditTaskPopup from "./popups/EditTaskPopup";
-import PageNavigator from "./bars/PageNavigator";
+import NavMenu from "./ui_element/NavMenu";
+import PageNavigator from "./ui_element/PageNavigator";
+import SettingsButton from "./ui_element/SettingsButton";
+import SettingsPopup from "./popups/SettingsPopup";
+import FilterNavigator from "./ui_element/FilterNavigator";
+import WarnPopup from "./popups/WarnPopup";
+import "../theme.css";
 
 /**
  * AppLayout is a presentational component responsible for rendering the main UI of the todo app.
@@ -30,22 +35,43 @@ const AppLayout = (props) => {
     provider, // Blockchain provider
     setPopupTask, // Setter for the popup task (for showing details)
     popupTask, // The currently selected task for the popup
-    maxTasks, // Maximum number of tasks allowed
     currentPage, // Current page for pagination
     setCurrentPage, // Setter for current page
-    totalPages // Total number of pages for pagination
+    totalPages, // Total number of pages for pagination
+    paginatedTasks // Tasks after applying pagination
   } = props;
   // Add state for editing popup
   const [editTask, setEditTask] = useState(null);
+  // WarnPopup state from logic hook
+  const { warnPopup, setWarnPopup } = props;
+  const [showSettings, setShowSettings] = useState(false);
+  const [darkMode, setDarkMode] = useState(() => {
+    const stored = localStorage.getItem('darkMode');
+    return stored ? stored === 'true' : false;
+  });
+  const [dateSortAsc, setDateSortAsc] = useState(true);
+  const [alphaSortAsc, setAlphaSortAsc] = useState(true);
+  const [activeSort, setActiveSort] = useState('date');
+
+  useEffect(() => {
+    localStorage.setItem('darkMode', darkMode);
+  }, [darkMode]);
+
+  // Debug output for task visibility
+  console.log("[DEBUG] Account:", account);
+  console.log("[DEBUG] tasks.length:", tasks.length, tasks.map(t => t.uuid));
+  console.log("[DEBUG] filteredTasks.length:", filteredTasks.length, filteredTasks.map(t => t.uuid));
+  console.log("[DEBUG] paginatedTasks.length:", paginatedTasks.length, paginatedTasks.map(t => t.uuid));
 
   return (
-    <div className="wrapper" style={{
+    <div className={darkMode ? "wrapper darkmode" : "wrapper"} style={{
       minHeight: '700px', // Ensures enough space for tasks, nav, and pagination
       maxHeight: '900px', // Prevents the box from growing too large
       height: '800px',    // Fixed height for consistent layout
       overflow: 'auto',   // Scroll if content overflows
       boxSizing: 'border-box',
-      position: 'relative' // Added for absolute positioning of page navigator
+      position: 'relative', // Added for absolute positioning of page navigator
+      transition: 'background 0.3s, color 0.3s'
     }}>
       {/* Input for adding a new task */}
       <div className="task-input">
@@ -61,14 +87,8 @@ const AppLayout = (props) => {
           onKeyDown={handleKeyDown}
           required
           maxLength={100}
-          disabled={tasks.filter(task => task.user && account && task.user.toLowerCase() === account.toLowerCase()).length >= (maxTasks || 8)}
         />
-        {/* Show a warning if max tasks reached */}
-        {tasks.filter(task => task.user && account && task.user.toLowerCase() === account.toLowerCase()).length >= (maxTasks || 8) && (
-          <div style={{ color: 'red', fontSize: '0.95rem', marginTop: '0.5rem' }}>
-            You have reached the maximum of {maxTasks || 8} tasks.
-          </div>
-        )}
+        {/* Remove max length warning */}
         {/* Separator line under the max length warning */}
         <hr style={{ margin: '1rem 0', border: 'none', borderTop: '1.5px solid #e0e0e0', width: '100%' }} />
       </div>
@@ -88,9 +108,8 @@ const AppLayout = (props) => {
           ref={clearBtnRef}
           type="button"
           tabIndex={0}
-          style={{ visibility: 'visible', opacity: filteredTasks.some(t => t.completed) ? 1 : 0.5, pointerEvents: 'auto', zIndex: 1000 }}
-          className={`clear-btn active${!filteredTasks.some(t => t.completed) ? " disabled" : ""}`}
-          disabled={!filteredTasks.some(t => t.completed)}
+          className={`clear-btn active${!tasks.some(t => t.completed && t.user && account && t.user.toLowerCase() === account.toLowerCase()) ? " disabled" : ""}`}
+          disabled={!tasks.some(t => t.completed && t.user && account && t.user.toLowerCase() === account.toLowerCase())}
           onClick={e => {
             console.log('DEBUG: onClick handler fired');
             console.log('Clear completed button clicked');
@@ -101,44 +120,24 @@ const AppLayout = (props) => {
         </button>
       </div>
       {/* Alphabetic sort/filter bar for tasks */}
-      <div className="filters" style={{ marginTop: '0.5rem', marginBottom: '0.5rem' }}>
-        {/* Sort tasks by ID ascending */}
-        <span
-          onClick={() => {
-            setFilteredTasks([...filteredTasks].sort((a, b) => Number(a.id) - Number(b.id)));
-          }}
-          style={{ marginLeft: '1rem', cursor: 'pointer', fontWeight: 'bold', color: '#ff9800' }}
-        >
-          ID
-        </span>
-        {/* Sort tasks A-Z */}
-        <span
-          onClick={() => {
-            setFilteredTasks([...filteredTasks].sort((a, b) => a.content.localeCompare(b.content)));
-          }}
-          style={{ cursor: 'pointer', fontWeight: 'bold', color: '#ff9800' }}
-        >
-          A-Z
-        </span>
-        {/* Sort tasks Z-A */}
-        <span
-          onClick={() => {
-            setFilteredTasks([...filteredTasks].sort((a, b) => b.content.localeCompare(a.content)));
-          }}
-          style={{ marginLeft: '1rem', cursor: 'pointer', fontWeight: 'bold', color: '#ff9800' }}
-        >
-          Z-A
-        </span>
-      </div>
+      <FilterNavigator
+        filteredTasks={filteredTasks}
+        setFilteredTasks={setFilteredTasks}
+        dateSortAsc={dateSortAsc}
+        setDateSortAsc={setDateSortAsc}
+        alphaSortAsc={alphaSortAsc}
+        setAlphaSortAsc={setAlphaSortAsc}
+        activeSort={activeSort}
+        setActiveSort={setActiveSort}
+      />
       {/* List of tasks (filtered and sorted, paginated) */}
       <ul className="task-box">
-        {filteredTasks.map((task, index) => (
+        {paginatedTasks.map((task, index) => (
           <Task
             task={task}
             todoWeb3={todoWeb3}
             provider={provider}
-            id={task.id}
-            key={task.id}
+            key={task.uuid}
             onDelete={deleteTask}
             onClick={e => {
               // Only open popup if the click is not on the checkbox or menu
@@ -149,6 +148,8 @@ const AppLayout = (props) => {
               setPopupTask(task);
             }}
             onEdit={setEditTask}
+            handleToggleCompleted={props.handleToggleCompleted}
+            account={account}
           />
         ))}
       </ul>
@@ -190,6 +191,10 @@ const AppLayout = (props) => {
         setCurrentPage={setCurrentPage}
         totalPages={totalPages}
       />
+      <SettingsButton onClick={() => setShowSettings(true)} darkMode={darkMode} pressed={showSettings} />
+      <SettingsPopup show={showSettings} onClose={() => setShowSettings(false)} darkMode={darkMode} setDarkMode={setDarkMode} />
+      {/* WarnPopup for error/warning display */}
+      <WarnPopup open={warnPopup.open} onClose={() => setWarnPopup({ open: false, message: "" })} warning={warnPopup.message} />
     </div>
   );
 };

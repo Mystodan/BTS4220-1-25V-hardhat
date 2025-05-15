@@ -1,5 +1,4 @@
 import React from "react";
-import FilterNavigator from "../ui_element/FilterNavigator";
 
 /**
  * NavMenu component
@@ -29,7 +28,7 @@ const NavMenu = ({ activeFilter, filterTasks, tasks, setActiveFilter, setFiltere
     {/* Filter: All tasks */}
     <span
       onClick={filterTasks}
-      className={activeFilter === "all" ? "active" : ""}
+      className={`all${activeFilter === "all" ? " active" : ""}`}
       id="all"
       style={{ userSelect: 'none' }}
     >
@@ -48,7 +47,7 @@ const NavMenu = ({ activeFilter, filterTasks, tasks, setActiveFilter, setFiltere
           )
         );
       }}
-      className={activeFilter === "public" || activeFilter === "private" ? "active" : ""}
+      className={`${activeFilter === "public" ? "public" : "private"}${(activeFilter === "public" || activeFilter === "private") ? " active" : ""}`}
       id="privacy-toggle"
       style={{ marginLeft: '1rem', cursor: 'pointer', userSelect: 'none' }}
       tabIndex={0}
@@ -60,7 +59,7 @@ const NavMenu = ({ activeFilter, filterTasks, tasks, setActiveFilter, setFiltere
     {/* Filter: Pending (not completed) tasks */}
     <span
       onClick={filterTasks}
-      className={activeFilter === "pending" ? "active" : ""}
+      className={`pending${activeFilter === "pending" ? " active" : ""}`}
       id="pending"
       style={{ userSelect: 'none' }}
     >
@@ -69,7 +68,7 @@ const NavMenu = ({ activeFilter, filterTasks, tasks, setActiveFilter, setFiltere
     {/* Filter: Completed tasks */}
     <span
       onClick={filterTasks}
-      className={activeFilter === "completed" ? "active" : ""}
+      className={`completed${activeFilter === "completed" ? " active" : ""}`}
       id="completed"
       style={{ userSelect: 'none' }}
     >

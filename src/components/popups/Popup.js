@@ -42,7 +42,7 @@ const Popup = ({
   return (
     <div className="popup-overlay" onClick={handleOverlayClick}>
       <div
-        className="popup-content"
+        className="popup-content task-popup"
         onClick={e => {
           e.stopPropagation();
         }}
@@ -52,11 +52,11 @@ const Popup = ({
         {error && <div style={{ color: 'red', marginTop: '0.5rem' }}>{error}</div>}
         {showActions ? (
           <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem' }}>
-            {onSave && <button type="button" onClick={onSave} disabled={loading} style={{ background: '#ff9800', color: '#fff', border: 'none', borderRadius: 6, padding: '0.5rem 1.2rem', fontWeight: 500, fontSize: '1rem', cursor: loading ? 'not-allowed' : 'pointer' }}>{saveLabel}</button>}
-            {onCancel && <button type="button" onClick={onCancel} disabled={loading} style={{ background: '#eee', color: '#222', border: 'none', borderRadius: 6, padding: '0.5rem 1.2rem', fontWeight: 500, fontSize: '1rem', cursor: loading ? 'not-allowed' : 'pointer' }}>{cancelLabel}</button>}
+            {onSave && <button type="button" onClick={onSave} disabled={loading} className="popup-btn popup-btn-save">{saveLabel}</button>}
+            {onCancel && <button type="button" onClick={onCancel} disabled={loading} className="popup-btn popup-btn-cancel">{cancelLabel}</button>}
           </div>
         ) : (
-          onClose && overlayClosable && <button onClick={onClose} style={{ marginTop: '1rem' }}>Close</button>
+          onClose && overlayClosable && <button onClick={onClose} className="popup-btn popup-btn-close">Close</button>
         )}
       </div>
     </div>

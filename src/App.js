@@ -3,7 +3,7 @@ import { ethers } from "ethers";
 
 // Components
 //import Navigation from "./components/Navigation";
-import Task from "./components/Task";
+import Task from "./components/ui_element/TaskMenu";
 import BackgroundVideo from "./components/BackgroundVideo";
 import TaskPopup from "./components/popups/ViewTaskPopup";
 import AppLayout from "./components/AppLayout";
@@ -52,7 +52,10 @@ function App() {
         handleKeyDown,
         handleSubmit,
         paginatedTasks,
-        totalPages
+        totalPages,
+        warnPopup,
+        setWarnPopup,
+        handleToggleCompleted
     } = useTodoLogic();
 
     return (
@@ -69,7 +72,8 @@ function App() {
                 setActiveFilter={setActiveFilter}
                 setFilteredTasks={setFilteredTasks}
                 account={account}
-                filteredTasks={paginatedTasks}
+                filteredTasks={filteredTasks}
+                paginatedTasks={paginatedTasks}
                 clearBtnRef={clearBtnRef}
                 clearCompleted={clearCompleted}
                 deleteTask={deleteTask}
@@ -80,7 +84,9 @@ function App() {
                 currentPage={currentPage}
                 setCurrentPage={setCurrentPage}
                 totalPages={totalPages}
-                maxTasks={MAX_TASKS}
+                warnPopup={warnPopup}
+                setWarnPopup={setWarnPopup}
+                handleToggleCompleted={handleToggleCompleted}
             />
         </>
     );

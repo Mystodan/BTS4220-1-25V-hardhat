@@ -29,10 +29,10 @@ const EditTaskPopup = ({ task, onClose, todoWeb3, provider, account, reloadTasks
     try {
       const signer = await provider.getSigner();
       if (content !== task.content) {
-        await (await todoWeb3.connect(signer).editTask(task.id, content)).wait();
+        await (await todoWeb3.connect(signer).editTask(task.uuid, content)).wait();
       }
       if (completed !== task.completed) {
-        await (await todoWeb3.connect(signer).toggleCompleted(task.id)).wait();
+        await (await todoWeb3.connect(signer).toggleCompleted(task.uuid)).wait();
       }
       if (reloadTasks) await reloadTasks();
       onClose();

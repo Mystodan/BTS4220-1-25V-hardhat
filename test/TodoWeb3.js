@@ -1,105 +1,74 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
-
-const tokens = (n) => {
-  return ethers.utils.parseUnits(n.toString(), "ether");
-};
+const { v4: uuidv4 } = require("uuid");
 
 describe("TodoWeb3", () => {
   let todoWeb3;
   let deployer;
-  const CONTENT = "Task 1";
+  let uuid1, uuid2;
+  const CONTENT1 = "Task 1";
+  const CONTENT2 = "Task 2";
   beforeEach(async () => {
-    // Setup accounts
     [deployer] = await ethers.getSigners();
-
-    // Deploy contract
     const TodoWeb3 = await ethers.getContractFactory("TodoWeb3");
     todoWeb3 = await TodoWeb3.deploy();
-
-    // Create task
-    let transaction = await todoWeb3.connect(deployer).createTask(CONTENT);
-    await transaction.wait();
+    uuid1 = uuidv4();
+    uuid2 = uuidv4();
+    // Create two tasks
+    let tx1 = await todoWeb3.connect(deployer).createTask(uuid1, CONTENT1, false);
+    await tx1.wait();
+    let tx2 = await todoWeb3.connect(deployer).createTask(uuid2, CONTENT2, false);
+    await tx2.wait();
   });
 
-  describe("Create Task", async () => {
+  describe("Create Task", () => {
     it("creates the task", async () => {
-      const result = await todoWeb3.tasks(1);
-      expect(result.content).to.be.equal(CONTENT);
+      const result = await todoWeb3.tasks(uuid1);
+      expect(result.content).to.be.equal(CONTENT1);
       expect(result.completed).to.be.equal(false);
     });
   });
 
-
-   describe("Delete Task", async () => {
-    beforeEach(async () => {
-      // Create a second task
-      let transaction = await todoWeb3.connect(deployer).createTask("Task 2");
-      await transaction.wait();
-    });
-
+  describe("Delete Task", () => {
     it("deletes the specified task", async () => {
-      // Delete the first task
-      let transaction = await todoWeb3.connect(deployer).deleteTask(1);
-      await transaction.wait();
-
-      // Fetch the deleted task
-      const deletedTask = await todoWeb3.tasks(1);
-      expect(deletedTask.content).to.be.equal(""); // Should be empty string after deletion
-
-      // The second task should still exist
-      const task2 = await todoWeb3.tasks(2);
-      expect(task2.content).to.be.equal("Task 2");
+      let tx = await todoWeb3.connect(deployer).deleteTask(uuid1);
+      await tx.wait();
+      const deletedTask = await todoWeb3.tasks(uuid1);
+      expect(deletedTask.content).to.be.equal("");
+      const task2 = await todoWeb3.tasks(uuid2);
+      expect(task2.content).to.be.equal(CONTENT2);
     });
-
     it("emits a TaskDeleted event", async () => {
-      await expect(todoWeb3.connect(deployer).deleteTask(1))
+      await expect(todoWeb3.connect(deployer).deleteTask(uuid1))
         .to.emit(todoWeb3, "TaskDeleted")
-        .withArgs(1);
+        .withArgs(uuid1);
     });
-
     it("reverts if task does not exist", async () => {
-      // Delete first
-      let transaction = await todoWeb3.connect(deployer).deleteTask(1);
-      await transaction.wait();
-
-      // Try deleting again
-      await expect(todoWeb3.connect(deployer).deleteTask(1)).to.be.revertedWith("Task already deleted");
+      let tx = await todoWeb3.connect(deployer).deleteTask(uuid1);
+      await tx.wait();
+      await expect(todoWeb3.connect(deployer).deleteTask(uuid1)).to.be.revertedWith("Task already deleted");
     });
   });
 
-  describe("Complete Task", async () => {
-    // Completes task
-    beforeEach(async () => {
-      const transaction = await todoWeb3.connect(deployer).toggleCompleted(1);
-      await transaction.wait();
-    });
+  describe("Complete Task", () => {
     it("completes the task", async () => {
-      const result = await todoWeb3.tasks(1);
-      expect(result.content).to.be.equal(CONTENT);
+      let tx = await todoWeb3.connect(deployer).toggleCompleted(uuid1);
+      await tx.wait();
+      const result = await todoWeb3.tasks(uuid1);
+      expect(result.content).to.be.equal(CONTENT1);
       expect(result.completed).to.be.equal(true);
     });
   });
 
-  describe("Clear completed tasks", async () => {
-    // Completes task
-    beforeEach(async () => {
-      let transaction = await todoWeb3.connect(deployer).createTask("Task 2");
-      await transaction.wait();
-      transaction = await todoWeb3.connect(deployer).toggleCompleted(1);
-      await transaction.wait();
+  describe("Clear completed tasks", () => {
+    it("clears completed tasks", async () => {
+      let tx = await todoWeb3.connect(deployer).toggleCompleted(uuid1);
+      await tx.wait();
       await todoWeb3.clearCompletedTasks();
-    });
-    it("updates the taskCount", async () => {
-      const result = await todoWeb3.taskCount();
-      expect(result.toString()).to.be.equal("1");
-    });
-    it("updates the tasks", async () => {
-      let result = await todoWeb3.tasks(1);
-      console.log(result);
-      result = await todoWeb3.tasks(2);
-      console.log(result);
-      expect(result.content).to.be.equal("Task 2");
+      const result = await todoWeb3.tasks(uuid1);
+      expect(result.content).to.be.equal("");
+      const task2 = await todoWeb3.tasks(uuid2);
+      expect(task2.content).to.be.equal(CONTENT2);
     });
   });
 });

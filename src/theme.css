@@ -1,0 +1,279 @@
+/* Unified theme CSS for both dark and light mode gradients */
+
+:root {
+  --task-gradient-text: linear-gradient(90deg, #ff9800 0%, #ffd580 100%);
+  --task-margin-bottom: 18px;
+  --task-padding-bottom: 16px;
+  --task-border-bottom: 1px solid #ccc;
+  --task-min-height: 48px;
+  --task-line-height: 1.2;
+}
+
+.wrapper.darkmode {
+  --task-gradient-text: linear-gradient(90deg, #8854d0 0%, #a18cd1 100%);
+  --task-margin-bottom: 18px;
+  --task-padding-bottom: 16px;
+  --task-border-bottom: 1px solid #a18cd1;
+  --task-min-height: 48px;
+  --task-line-height: 1.2;
+}
+
+/* --- LIGHT MODE (default) --- */
+.clear-btn {
+  background: linear-gradient(90deg, #ff9800 0%, #ffd580 100%) !important;
+  border: 1.5px solid #ff9800 !important;
+  color: #fff !important;
+}
+.clear-btn:disabled {
+  background: #eee !important;
+  color: #aaa !important;
+  border: 1.5px solid #ff9800 !important;
+}
+.settings-popup button {
+  background: linear-gradient(90deg, #ff9800 0%, #ffd580 100%) !important;
+  border: none !important;
+  color: #fff !important;
+}
+.settings-popup .toggle-switch-track {
+  background: linear-gradient(90deg, #ff9800 0%, #ffd580 100%) !important;
+}
+.page-navigator {
+  border: 1px solid #ff9800 !important;
+}
+.page-navigator button {
+  border: 1px solid #ff9800 !important;
+  background: linear-gradient(90deg, #ff9800 0%, #ffd580 100%) !important;
+  color: #fff !important;
+}
+.page-navigator button[disabled],
+.page-navigator button:disabled {
+  background: #eee !important;
+  color: #aaa !important;
+}
+
+/* --- POPUP STYLES --- */
+.popup-content {
+  background: #fff;
+  color: #222;
+  border-radius: 12px;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.18);
+}
+.popup-content h3 {
+  color: #222;
+}
+.popup-content button,
+.popup-btn,
+.popup-btn-save,
+.popup-btn-cancel,
+.popup-btn-close {
+  background: linear-gradient(90deg, #ff9800 0%, #ffd580 100%);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  box-shadow: none;
+  transition: background 0.2s, color 0.2s;
+}
+.popup-content button:disabled,
+.popup-btn:disabled {
+  background: #eee;
+  color: #aaa;
+}
+
+/* --- DARK MODE --- */
+.wrapper.darkmode {
+  background: #232946 !important;
+  color: #fff !important;
+}
+.wrapper.darkmode .task-input input {
+  background: #232946 !important;
+  color: #fff !important;
+  border: 1.5px solid #a18cd1 !important;
+}
+.wrapper.darkmode .task-input input:focus,
+.wrapper.darkmode .task-input input.active {
+  border: 2px solid #a18cd1 !important;
+}
+.wrapper.darkmode .controls {
+  border-bottom: 1px solid #a18cd1 !important;
+}
+.wrapper.darkmode .clear-btn {
+  background: linear-gradient(90deg, #8854d0 0%, #a18cd1 100%) !important;
+  border: 1.5px solid #a18cd1 !important;
+  color: #fff !important;
+}
+.wrapper.darkmode .clear-btn:disabled {
+  background: #444 !important;
+  color: #aaa !important;
+  border: 1.5px solid #a18cd1 !important;
+}
+.wrapper.darkmode .settings-popup button {
+  background: linear-gradient(90deg, #8854d0 0%, #a18cd1 100%) !important;
+  color: #fff !important;
+}
+.wrapper.darkmode .settings-popup .toggle-switch-track {
+  background: linear-gradient(90deg, #8854d0 0%, #a18cd1 100%) !important;
+}
+.wrapper.darkmode .page-navigator {
+  border: 1px solid #a18cd1 !important;
+}
+.wrapper.darkmode .page-navigator button {
+  border: 1px solid #a18cd1 !important;
+  background: linear-gradient(90deg, #8854d0 0%, #a18cd1 100%) !important;
+  color: #fff !important;
+}
+.wrapper.darkmode .page-navigator button[disabled],
+.wrapper.darkmode .page-navigator button:disabled {
+  background: #444 !important;
+  color: #aaa !important;
+}
+
+/* --- DARK MODE POPUP --- */
+.wrapper.darkmode .popup-overlay {
+  background: rgba(10, 10, 20, 0.7) !important;
+}
+.wrapper.darkmode .popup-content {
+  background: #23272f !important;
+  color: #fff !important;
+  border-radius: 12px !important;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.28) !important;
+}
+.wrapper.darkmode .popup-content h3 {
+  color: #fff !important;
+}
+.wrapper.darkmode .popup-content button,
+.wrapper.darkmode .popup-btn,
+.wrapper.darkmode .popup-btn-save,
+.wrapper.darkmode .popup-btn-cancel,
+.wrapper.darkmode .popup-btn-close {
+  background: linear-gradient(90deg, #8854d0 0%, #a18cd1 100%) !important;
+  color: #fff !important;
+  border: none !important;
+  border-radius: 6px !important;
+  box-shadow: none !important;
+  transition: background 0.2s, color 0.2s;
+}
+.wrapper.darkmode .popup-content button:disabled,
+.wrapper.darkmode .popup-btn:disabled {
+  background: #444 !important;
+  color: #aaa !important;
+}
+
+/* --- DARK MODE: Task Menu --- */
+.wrapper.darkmode .task {
+  background: #232946 !important;
+  color: #fff !important;
+  border-bottom: var(--task-border-bottom) !important;
+  margin-bottom: var(--task-margin-bottom) !important;
+  padding-bottom: var(--task-padding-bottom) !important;
+  min-height: var(--task-min-height) !important;
+  line-height: var(--task-line-height) !important;
+}
+.wrapper.darkmode .task .checked {
+  color: #a18cd1 !important;
+}
+.wrapper.darkmode .task-menu {
+  background: #232946 !important;
+  color: #fff !important;
+  border: 1px solid #a18cd1 !important;
+}
+.wrapper.darkmode .task-menu.show {
+  background: #232946 !important;
+  color: #fff !important;
+  border: 1px solid #a18cd1 !important;
+}
+.wrapper.darkmode .open-task-menu,
+.wrapper.darkmode .open-task-menu.active {
+  background: #232946 !important;
+  color: #a18cd1 !important;
+  border: 1px solid #a18cd1 !important;
+}
+.wrapper.darkmode .settings {
+  background: #232946 !important;
+  color: #fff !important;
+}
+.wrapper.darkmode .uil {
+  color: #a18cd1 !important;
+}
+.wrapper.darkmode .task-box .task:last-child,
+.task-box .task:last-child {
+  border-bottom: none !important;
+  margin-bottom: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+/* --- FILTER TEXT STYLES --- */
+.filters span {
+  display: inline-block;
+  background: none;
+  color: inherit;
+  border-radius: 6px;
+  padding: 2px 10px;
+  margin: 0 -5px;
+  font-weight: 500;
+  transition: background 0.3s, color 0.3s;
+  cursor: pointer;
+  vertical-align: middle;
+  line-height: 1.2;
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: visible;
+}
+.filters span.active {
+  display: inline-block;
+  background: linear-gradient(90deg, #ff9800 0%, #ffd580 100%);
+  color: #fff !important;
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgba(255,152,0,0.10);
+  text-decoration: none;
+  border-radius: 6px;
+  padding: 2px 10px;
+  margin: 0 1px;
+  white-space: nowrap;
+  overflow: visible;
+}
+
+.wrapper.darkmode .filters span {
+  background: none;
+  color: #fff !important;
+  font-weight: 500;
+}
+.wrapper.darkmode .filters span.active {
+  background: linear-gradient(90deg, #8854d0 0%, #a18cd1 100%);
+  color: #fff !important;
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgba(136,84,208,0.10);
+  text-decoration: none;
+  border-radius: 6px;
+  padding: 2px 10px;
+  margin: 0 1px;
+  white-space: nowrap;
+  overflow: visible;
+}
+
+/* ...rest of theme.css... */
+.task {
+  min-height: var(--task-min-height) !important;
+  line-height: var(--task-line-height) !important;
+  margin-bottom: 18px !important;
+  padding-bottom: 16px !important;
+  border-bottom: 1px solid #ccc !important;
+}
+.wrapper.darkmode .task {
+  border-bottom: 1px solid #a18cd1 !important;
+}
+.task-box {
+  position: relative;
+  border-bottom: none;
+}
+.task-box::after {
+  content: "";
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  height: 0;
+  border-bottom: 1px solid #ccc;
+  margin: 0 0 0 0;
+}
+.wrapper.darkmode .task-box::after {
+  border-bottom: 1px solid #a18cd1;
+}

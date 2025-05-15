@@ -2,10 +2,8 @@
 pragma solidity ^0.8.9;
 
 contract TodoWeb3 {
-    uint256 public taskCount = 0;
-
     struct Task {
-        uint256 id;
+        string uuid;
         string content;
         bool completed;
         address user; // Only set if private
@@ -14,121 +12,155 @@ contract TodoWeb3 {
         uint256 completedAt;
     }
 
-    mapping(uint256 => Task) public tasks;
-    uint256[] public id_tracker;
+    mapping(string => Task) public tasks;
+    mapping(address => string[]) private userTasks; // Only for private tasks
+    string[] public publicTasks; // Only for public tasks
 
-    event TaskCreated(uint256 id, string content, bool completed);
+    event TaskCreated(string uuid, string content, bool completed);
+    event TaskCompleted(string uuid, bool completed);
+    event TaskDeleted(string uuid);
+    event TasksCleared(string[] uuid_arr);
 
-    event TaskCompleted(uint256 id, bool completed);
-
-    event TaskDeleted(uint256 id);
-
-    event TasksCleared(uint256[] id_arr);
-
-    function remove_from_tracker(uint256 _id) private {
-        uint256 len = id_tracker.length;
-        for (uint256 i = 0; i < len; i++) {
-            if (id_tracker[i] == _id) {
-                if (i != len - 1) {
-                    id_tracker[i] = id_tracker[len - 1];
+    function deleteTask(string memory _uuid) public {
+        require(bytes(_uuid).length > 0, "Invalid task uuid");
+        require(bytes(tasks[_uuid].content).length > 0, "Task already deleted");
+        if (tasks[_uuid].is_private) {
+            require(tasks[_uuid].user == msg.sender, "Not your private task");
+        } else {
+            require(tasks[_uuid].user == msg.sender, "Not your public task");
+        }
+        // Remove from userTasks or publicTasks array
+        if (tasks[_uuid].is_private) {
+            string[] storage priv = userTasks[msg.sender];
+            for (uint256 i = 0; i < priv.length; i++) {
+                if (keccak256(bytes(priv[i])) == keccak256(bytes(_uuid))) {
+                    priv[i] = priv[priv.length - 1];
+                    priv.pop();
+                    break;
                 }
-                id_tracker.pop();
-                break;
+            }
+        } else {
+            for (uint256 i = 0; i < publicTasks.length; i++) {
+                if (keccak256(bytes(publicTasks[i])) == keccak256(bytes(_uuid))) {
+                    publicTasks[i] = publicTasks[publicTasks.length - 1];
+                    publicTasks.pop();
+                    break;
+                }
             }
         }
+        tasks[_uuid] = Task(_uuid, "", false, address(0), false, 0, 0);
+        emit TaskDeleted(_uuid);
     }
 
-    function deleteTask(uint256 _id) public {
-        require(_id > 0 && _id <= taskCount, "Invalid task id");
-        require(bytes(tasks[_id].content).length > 0, "Task already deleted");
-        if (tasks[_id].is_private) {
-            require(tasks[_id].user == msg.sender, "Not your private task");
+    function createTask(string memory _uuid, string memory _content, bool _privateTask) public {
+        require(bytes(_uuid).length > 0, "Invalid task uuid");
+        require(bytes(_content).length > 0, "Task content required");
+        // Fix: Only check for existing if mapping entry is not default
+        if (bytes(tasks[_uuid].content).length > 0) {
+            revert("Task already exists");
         }
-        // Anyone can delete public tasks
-        tasks[_id] = Task(_id, "", false, address(0), false, 0, 0);
-        remove_from_tracker(_id);
-        emit TaskDeleted(_id);
+        address _user = msg.sender; // Always set to creator
+        tasks[_uuid] = Task(_uuid, _content, false, _user, _privateTask, block.timestamp, 0);
+        if (_privateTask) {
+            userTasks[msg.sender].push(_uuid);
+        } else {
+            publicTasks.push(_uuid);
+        }
+        emit TaskCreated(_uuid, _content, false);
     }
 
-    function createTask(string memory _content, bool _privateTask) public {
-        taskCount++;
-        address _user = _privateTask ? msg.sender : address(0);
-        tasks[taskCount] = Task(taskCount, _content, false, _user, _privateTask, block.timestamp, 0);
-        id_tracker.push(taskCount);
-        emit TaskCreated(taskCount, _content, false);
-    }
-
-    function toggleCompleted(uint256 _id) public {
-        if (tasks[_id].is_private) {
-            require(tasks[_id].user == msg.sender, "Not your private task");
+    function toggleCompleted(string memory _uuid) public {
+        require(bytes(_uuid).length > 0, "Invalid task uuid");
+        // Fix: Only check .length if mapping entry is not default
+        if (bytes(tasks[_uuid].content).length == 0) {
+            revert("Task does not exist");
+        }
+        if (tasks[_uuid].is_private) {
+            require(tasks[_uuid].user == msg.sender, "Not your private task");
         }
         // Anyone can toggle public tasks
-        tasks[_id].completed = !tasks[_id].completed;
-        if (tasks[_id].completed) {
-            tasks[_id].completedAt = block.timestamp;
+        tasks[_uuid].completed = !tasks[_uuid].completed;
+        if (tasks[_uuid].completed) {
+            tasks[_uuid].completedAt = block.timestamp;
         } else {
-            tasks[_id].completedAt = 0;
+            tasks[_uuid].completedAt = 0;
         }
-        emit TaskCompleted(_id, tasks[_id].completed);
+        emit TaskCompleted(_uuid, tasks[_uuid].completed);
     }
 
     function clearCompletedTasks() public {
         uint256 completedCount = 0;
-        // Count all completed tasks that the user can clear (private owned by user, or public)
-        for (uint256 i = 0; i < id_tracker.length; i++) {
+        // Only clear public tasks created by msg.sender
+        for (uint256 i = 0; i < publicTasks.length; i++) {
+            string memory tid = publicTasks[i];
             if (
-                tasks[id_tracker[i]].completed &&
-                (
-                    (!tasks[id_tracker[i]].is_private && bytes(tasks[id_tracker[i]].content).length > 0) ||
-                    (tasks[id_tracker[i]].is_private && tasks[id_tracker[i]].user == msg.sender)
-                )
+                tasks[tid].completed &&
+                bytes(tasks[tid].content).length > 0 &&
+                tasks[tid].user == msg.sender
             ) {
                 completedCount++;
             }
         }
-        uint256[] memory removedIds = new uint256[](completedCount);
-        uint256 idx = 0;
-        // Remove from the end to avoid skipping elements
-        for (uint256 i = id_tracker.length; i > 0; ) {
-            i--;
-            if (
-                tasks[id_tracker[i]].completed &&
-                (
-                    (!tasks[id_tracker[i]].is_private && bytes(tasks[id_tracker[i]].content).length > 0) ||
-                    (tasks[id_tracker[i]].is_private && tasks[id_tracker[i]].user == msg.sender)
-                )
-            ) {
-                removedIds[idx] = id_tracker[i];
-                idx++;
-                tasks[id_tracker[i]] = Task(id_tracker[i], "", false, address(0), false, 0, 0);
-                remove_from_tracker(id_tracker[i]);
+        // Clear private tasks for sender
+        string[] storage priv = userTasks[msg.sender];
+        for (uint256 i = 0; i < priv.length; i++) {
+            string memory tid = priv[i];
+            if (tasks[tid].completed && bytes(tasks[tid].content).length > 0) {
+                completedCount++;
             }
         }
-        emit TasksCleared(removedIds);
+        string[] memory removedUuids = new string[](completedCount);
+        uint256 idx = 0;
+        // Mark public tasks as deleted (only those created by msg.sender)
+        for (uint256 i = 0; i < publicTasks.length; i++) {
+            string memory tid = publicTasks[i];
+            if (
+                tasks[tid].completed &&
+                bytes(tasks[tid].content).length > 0 &&
+                tasks[tid].user == msg.sender
+            ) {
+                removedUuids[idx++] = tid;
+                tasks[tid] = Task(tid, "", false, address(0), false, 0, 0);
+            }
+        }
+        // Mark private tasks as deleted
+        for (uint256 i = 0; i < priv.length; i++) {
+            string memory tid = priv[i];
+            if (tasks[tid].completed && bytes(tasks[tid].content).length > 0) {
+                removedUuids[idx++] = tid;
+                tasks[tid] = Task(tid, "", false, address(0), true, 0, 0);
+            }
+        }
+        emit TasksCleared(removedUuids);
     }
 
     function getMyTasks() public view returns (Task[] memory) {
+        // Count public tasks
         uint256 count = 0;
-        for (uint256 i = 0; i < id_tracker.length; i++) {
-            // Only count tasks visible to the caller:
-            // - public tasks (not private, not deleted)
-            // - private tasks owned by the caller (not deleted)
-            if (
-                (!tasks[id_tracker[i]].is_private && bytes(tasks[id_tracker[i]].content).length > 0) ||
-                (tasks[id_tracker[i]].is_private && tasks[id_tracker[i]].user == msg.sender && bytes(tasks[id_tracker[i]].content).length > 0)
-            ) {
+        for (uint256 i = 0; i < publicTasks.length; i++) {
+            if (bytes(tasks[publicTasks[i]].content).length > 0) {
+                count++;
+            }
+        }
+        // Count private tasks for sender
+        string[] storage priv = userTasks[msg.sender];
+        for (uint256 i = 0; i < priv.length; i++) {
+            if (bytes(tasks[priv[i]].content).length > 0) {
                 count++;
             }
         }
         Task[] memory myTasks = new Task[](count);
         uint256 idx = 0;
-        for (uint256 i = 0; i < id_tracker.length; i++) {
-            if (
-                (!tasks[id_tracker[i]].is_private && bytes(tasks[id_tracker[i]].content).length > 0) ||
-                (tasks[id_tracker[i]].is_private && tasks[id_tracker[i]].user == msg.sender && bytes(tasks[id_tracker[i]].content).length > 0)
-            ) {
-                myTasks[idx] = tasks[id_tracker[i]];
-                idx++;
+        // Add public tasks
+        for (uint256 i = 0; i < publicTasks.length; i++) {
+            if (bytes(tasks[publicTasks[i]].content).length > 0) {
+                myTasks[idx++] = tasks[publicTasks[i]];
+            }
+        }
+        // Add private tasks
+        for (uint256 i = 0; i < priv.length; i++) {
+            if (bytes(tasks[priv[i]].content).length > 0) {
+                myTasks[idx++] = tasks[priv[i]];
             }
         }
         return myTasks;
@@ -136,32 +168,29 @@ contract TodoWeb3 {
 
     function getPublicTasks() public view returns (Task[] memory) {
         uint256 count = 0;
-        for (uint256 i = 0; i < id_tracker.length; i++) {
-            // Only count public tasks that are not deleted
-            if (!tasks[id_tracker[i]].is_private && bytes(tasks[id_tracker[i]].content).length > 0) {
+        for (uint256 i = 0; i < publicTasks.length; i++) {
+            if (bytes(tasks[publicTasks[i]].content).length > 0) {
                 count++;
             }
         }
-        Task[] memory publicTasks = new Task[](count);
+        Task[] memory pubTasks = new Task[](count);
         uint256 idx = 0;
-        for (uint256 i = 0; i < id_tracker.length; i++) {
-            if (!tasks[id_tracker[i]].is_private && bytes(tasks[id_tracker[i]].content).length > 0) {
-                publicTasks[idx] = tasks[id_tracker[i]];
-                idx++;
+        for (uint256 i = 0; i < publicTasks.length; i++) {
+            if (bytes(tasks[publicTasks[i]].content).length > 0) {
+                pubTasks[idx++] = tasks[publicTasks[i]];
             }
         }
-        return publicTasks;
+        return pubTasks;
     }
 
-    // --- Edit functionality ---
-    function editTask(uint256 _id, string memory _content) public {
-        require(_id > 0 && _id <= taskCount, "Invalid task id");
-        require(bytes(tasks[_id].content).length > 0, "Task does not exist");
-        if (tasks[_id].is_private) {
-            require(tasks[_id].user == msg.sender, "Not your private task");
+    function editTask(string memory _uuid, string memory _content) public {
+        require(bytes(_uuid).length > 0, "Invalid task uuid");
+        require(bytes(tasks[_uuid].content).length > 0, "Task does not exist");
+        if (tasks[_uuid].is_private) {
+            require(tasks[_uuid].user == msg.sender, "Not your private task");
         }
         // Anyone can edit public tasks
-        tasks[_id].content = _content;
+        tasks[_uuid].content = _content;
     }
 
     fallback() external payable {

@@ -2,6 +2,8 @@ import { useState, useRef, useEffect } from "react";
 import { ethers } from "ethers";
 import TodoWeb3 from "../abis/TodoWeb3.json";
 import config from "../config.json";
+import { v4 as uuidv4 } from "uuid";
+import WarnPopup from "../components/popups/WarnPopup";
 
 // Enum for filter types
 export const FilterType = Object.freeze({
@@ -25,8 +27,8 @@ export function useTodoLogic() {
     const [popupTask, setPopupTask] = useState(null);
     const clearBtnRef = useRef(null);
     const [currentPage, setCurrentPage] = useState(1);
-    const MAX_TASKS = 8;
     const TASKS_PER_PAGE = 8;
+    const [warnPopup, setWarnPopup] = useState({ open: false, message: "" });
 
     // --- Wallet Connection ---
     const checkOrRequestWalletConnection = async () => {
@@ -76,9 +78,10 @@ export function useTodoLogic() {
         if (!provider || !todoWeb3Instance) return;
         const signer = provider.getSigner();
         const myTasks = await todoWeb3Instance.connect(signer).getMyTasks();
-        const mappedTasks = myTasks.map(task => ({
+        // Filter out deleted tasks (content === "")
+        const filtered = myTasks.filter(task => task.content && task.content !== "");
+        const mappedTasks = filtered.map(task => ({
             ...task,
-            id: task.id && task.id._isBigNumber ? Number(task.id) : task.id,
             createdAt: task.createdAt && task.createdAt._isBigNumber ? Number(task.createdAt) : (typeof task.createdAt === 'number' ? task.createdAt : undefined),
             completedAt: task.completedAt && task.completedAt._isBigNumber ? Number(task.completedAt) : (typeof task.completedAt === 'number' ? task.completedAt : undefined)
         }));
@@ -86,35 +89,42 @@ export function useTodoLogic() {
         applyCurrentFilter(mappedTasks, undefined, keepPage);
     };
 
-    // --- Filtering ---
-    const applyCurrentFilter = (tasksArr, filterOverride, keepPage = false) => {
-        let filtered = tasksArr;
-        const filter = filterOverride || activeFilter;
+    // --- Filtering & Sorting ---
+    const sortByDateDesc = arr => arr.slice().sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+
+    const filterTasksByType = (tasksArr, filter, account) => {
         if (filter === FilterType.PRIVATE) {
-            filtered = tasksArr.filter(
+            return tasksArr.filter(
                 (task) => task.is_private && task.user && account && task.user.toLowerCase() === account.toLowerCase()
             );
         } else if (filter === FilterType.PUBLIC) {
-            filtered = tasksArr.filter((task) => !task.is_private);
+            return tasksArr.filter((task) => !task.is_private);
         } else if (filter === FilterType.ALL) {
-            filtered = tasksArr.filter(
+            return tasksArr.filter(
                 (task) =>
                     !task.is_private ||
                     (task.is_private && task.user && account && task.user.toLowerCase() === account.toLowerCase())
             );
         } else if (filter === FilterType.PENDING) {
-            filtered = tasksArr.filter(
+            return tasksArr.filter(
                 (task) =>
                     !task.completed &&
                     (!task.is_private || (task.is_private && task.user && account && task.user.toLowerCase() === account.toLowerCase()))
             );
         } else if (filter === FilterType.COMPLETED) {
-            filtered = tasksArr.filter(
+            return tasksArr.filter(
                 (task) =>
                     task.completed &&
                     (!task.is_private || (task.is_private && task.user && account && task.user.toLowerCase() === account.toLowerCase()))
             );
         }
+        return tasksArr;
+    };
+
+    const applyCurrentFilter = (tasksArr, filterOverride, keepPage = false) => {
+        const filter = filterOverride || activeFilter;
+        let filtered = filterTasksByType(tasksArr, filter, account);
+        filtered = sortByDateDesc(filtered);
         setFilteredTasks(filtered);
         if (!keepPage) setCurrentPage(1);
     };
@@ -124,37 +134,148 @@ export function useTodoLogic() {
 
     // --- Task Actions ---
     const addTask = async (t, is_private = false) => {
-        const userTasks = tasks.filter(task => task.user && account && task.user.toLowerCase() === account.toLowerCase());
-        if (userTasks.length >= MAX_TASKS) {
-            alert(`You can only have up to ${MAX_TASKS} tasks. Please delete a task before adding a new one.`);
-            return;
-        }
         if (!t || t.trim() === "") return;
-        const signer = await provider.getSigner();
-        let transaction = await todoWeb3.connect(signer).createTask(t.trim(), is_private);
-        await transaction.wait();
-        setNewTask("");
-        await getMyTasks(todoWeb3, true);
+        try {
+            const signer = await provider.getSigner();
+            const uuid = uuidv4();
+            let transaction = await todoWeb3.connect(signer).createTask(uuid, t.trim(), is_private);
+            await transaction.wait();
+            setNewTask("");
+            await getMyTasks(todoWeb3, true);
+        } catch (err) {
+            if (err && (err.code === 'ACTION_REJECTED' || err.code === 4001)) {
+                setWarnPopup({ open: true, message: 'Task creation cancelled by user.' });
+                return;
+            }
+            let msg = "";
+            if (err && err.error && err.error.data && err.error.data.message) {
+                const match = err.error.data.message.match(/reverted with reason string '([^']+)'/);
+                if (match && match[1]) msg = match[1];
+            }
+            if (!msg && err.reason) {
+                msg = err.reason;
+            }
+            if (!msg && err.message) {
+                const match = err.message.match(/reverted with reason string '([^']+)'/);
+                if (match && match[1]) msg = match[1];
+                else msg = err.message;
+            }
+            if (!msg) msg = String(err);
+            setWarnPopup({ open: true, message: msg });
+        }
     };
 
     const deleteTask = async (id) => {
-        const signer = await provider.getSigner();
-        let transaction = await todoWeb3.connect(signer).deleteTask(id);
-        await transaction.wait();
-        await getMyTasks(todoWeb3);
+        // Defensive: check if task exists before contract call
+        const task = tasks.find(t => t.uuid === id);
+        if (!task || !task.content) {
+            setWarnPopup({ open: true, message: "Task does not exist or already deleted." });
+            return;
+        }
+        try {
+            const signer = await provider.getSigner();
+            let transaction = await todoWeb3.connect(signer).deleteTask(id);
+            await transaction.wait();
+            await getMyTasks(todoWeb3);
+        } catch (err) {
+            let msg = "";
+            // Try to extract reason string from error
+            if (err && err.error && err.error.data && err.error.data.message) {
+                // Hardhat/ethers style: ...reverted with reason string '...'
+                const match = err.error.data.message.match(/reverted with reason string '([^']+)'/);
+                if (match && match[1]) msg = match[1];
+            } else if (err && (err.code === 'ACTION_REJECTED' || err.code === 4001)) {
+                // User rejected the transaction in wallet
+                setWarnPopup({ open: true, message: 'Transaction cancelled by user.' });
+                return;
+            }
+            if (!msg && err && err.reason) {
+                msg = err.reason;
+            }
+            if (!msg && err && err.message) {
+                // Try to extract from message
+                const match = err.message.match(/reverted with reason string '([^']+)'/);
+                if (match && match[1]) msg = match[1];
+                else msg = err.message;
+            }
+            if (!msg) msg = String(err);
+            setWarnPopup({ open: true, message: msg });
+        }
     };
 
     const clearCompleted = async () => {
         if (!todoWeb3 || !provider) return;
         try {
             const signer = await provider.getSigner();
+            // Only attempt to clear if there are completed tasks owned by the user
+            const myCompleted = tasks.filter(
+                t => t.completed && t.user && account && t.user.toLowerCase() === account.toLowerCase()
+            );
+            if (myCompleted.length === 0) {
+                setWarnPopup({ open: true, message: "No completed tasks you own to clear." });
+                return;
+            }
             let transaction = await todoWeb3.connect(signer).clearCompletedTasks();
             await transaction.wait();
             await getMyTasks(todoWeb3);
         } catch (err) {
-            window.console.error("Failed to clear completed tasks:", err);
+            let msg = "";
+            if (err && err.error && err.error.data && err.error.data.message) {
+                const match = err.error.data.message.match(/reverted with reason string '([^']+)'/);
+                if (match && match[1]) msg = match[1];
+            } else if (err && (err.code === 'ACTION_REJECTED' || err.code === 4001)) {
+                // User rejected the transaction in wallet
+                setWarnPopup({ open: true, message: 'Transaction cancelled by user.' });
+                return;
+            }
+            if (!msg && err.reason) {
+                msg = err.reason;
+            }
+            if (!msg && err.message) {
+                const match = err.message.match(/reverted with reason string '([^']+)'/);
+                if (match && match[1]) msg = match[1];
+                else msg = err.message;
+            }
+            if (!msg) msg = String(err);
+            setWarnPopup({ open: true, message: msg });
         }
     };
+
+    const handleToggleCompleted = async (id) => {
+        // Defensive: check if task exists before contract call
+        const task = tasks.find(t => t.uuid === id);
+        if (!task || !task.content) {
+            setWarnPopup({ open: true, message: "Task does not exist or already deleted." });
+            return;
+        }
+        if (!todoWeb3 || !provider) return;
+        try {
+          const signer = await provider.getSigner();
+          let transaction = await todoWeb3.connect(signer).toggleCompleted(id);
+          await transaction.wait();
+          await getMyTasks(todoWeb3); // Refresh tasks after toggling
+        } catch (err) {
+          let msg = "";
+          if (err && err.error && err.error.data && err.error.data.message) {
+            const match = err.error.data.message.match(/reverted with reason string '([^']+)'/);
+            if (match && match[1]) msg = match[1];
+          } else if (err && (err.code === 'ACTION_REJECTED' || err.code === 4001)) {
+            // User rejected the transaction in wallet
+            setWarnPopup({ open: true, message: 'Transaction cancelled by user.' });
+            return;
+          }
+          if (!msg && err.reason) {
+            msg = err.reason;
+          }
+          if (!msg && err.message) {
+            const match = err.message.match(/reverted with reason string '([^']+)'/);
+            if (match && match[1]) msg = match[1];
+            else msg = err.message;
+          }
+          if (!msg) msg = String(err);
+          setWarnPopup({ open: true, message: msg });
+        }
+      };
 
     // --- UI Event Handlers ---
     const filterTasks = (e) => {
@@ -228,8 +349,14 @@ export function useTodoLogic() {
     // On mount: connect wallet and load blockchain data
     useEffect(() => {
         checkOrRequestWalletConnection();
-        loadBlockchainData();
     }, []);
+
+    // NEW: Load tasks when provider, todoWeb3, and account are set
+    useEffect(() => {
+        if (provider && todoWeb3 && account) {
+            getMyTasks(todoWeb3);
+        }
+    }, [provider, todoWeb3, account]);
 
     // Debug: log clear completed button ref and state
     useEffect(() => {
@@ -241,11 +368,6 @@ export function useTodoLogic() {
 
     // --- Pagination ---
     let visibleTasks = filteredTasks;
-    if (activeFilter === FilterType.PRIVATE) {
-        visibleTasks = filteredTasks.filter(
-            (task) => task.is_private && task.user && account && task.user.toLowerCase() === account.toLowerCase()
-        );
-    }
     const paginatedTasks = visibleTasks.slice((currentPage - 1) * TASKS_PER_PAGE, currentPage * TASKS_PER_PAGE);
     const totalPages = Math.ceil(visibleTasks.length / TASKS_PER_PAGE);
 
@@ -268,7 +390,6 @@ export function useTodoLogic() {
         clearBtnRef,
         currentPage,
         setCurrentPage,
-        MAX_TASKS,
         TASKS_PER_PAGE,
         checkOrRequestWalletConnection,
         loadBlockchainData,
@@ -278,10 +399,13 @@ export function useTodoLogic() {
         addTask,
         deleteTask,
         clearCompleted,
+        handleToggleCompleted,
         filterTasks,
         handleKeyDown,
         handleSubmit,
         paginatedTasks,
-        totalPages
+        totalPages,
+        warnPopup,
+        setWarnPopup
     };
 }

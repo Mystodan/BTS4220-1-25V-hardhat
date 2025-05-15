@@ -141,13 +141,14 @@ li {
   padding: 7px 6px;
   border-radius: 4px;
   letter-spacing: 0.3px;
-  pointer-events: none;
+  pointer-events: auto;
   transition: transform 0.25s ease;
   background: linear-gradient(135deg, #f5af19 0%, #f12711 100%);
 }
 
 .clear-btn.active {
   opacity: 0.9;
+  pointer-events: auto;
 }
 
 .clear-btn:active {
@@ -156,7 +157,6 @@ li {
 
 .clear-btn:disabled, .clear-btn.disabled {
   opacity: 0.5 !important;
-  pointer-events: none;
 }
 
 .task-box {
@@ -293,6 +293,55 @@ li {
 
 .settings li i {
   padding-right: 8px;
+}
+
+.wrapper.darkmode .task-menu li:hover {
+  background: linear-gradient(90deg, #6d3bbd 0%, #7a6bb7 100%); /* darker purple gradient */
+  color: transparent;
+  background-clip: padding-box;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+
+  box-shadow: 0 2px 8px rgba(136,84,208,0.18);
+  animation: pulse-scale 0.7s infinite alternate;
+}
+
+.open-task-menu-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: var(--task-gradient-text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  box-shadow: 0 2px 8px rgba(136,84,208,0.10);
+  transition: background 0.2s, box-shadow 0.2s;
+  padding: 0;
+  z-index: 20; /* Ensure menu button is always on top of overlays */
+}
+
+.open-task-menu-btn:hover {
+  box-shadow: 0 4px 16px rgba(136,84,208,0.18);
+  filter: brightness(1.08);
+}
+
+.wrapper.darkmode .open-task-menu-btn {
+  background: linear-gradient(90deg, #8854d0 0%, #a18cd1 100%);
+}
+
+.wrapper.darkmode .task-box .task:last-child {
+  border-bottom: none;
+}
+
+.task-click-capture {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  z-index: 1; /* Below menu button, above background */
+}
+
+.task input[type="checkbox"] {
+  z-index: 2; /* Checkbox above overlay */
 }
 
 @media (max-width: 400px) {

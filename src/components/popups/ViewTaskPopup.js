@@ -17,7 +17,7 @@ const ViewTaskPopup = ({ task, onClose }) => {
       showActions={false}
     >
       <div>
-        <b>ID:</b> {String(task.id)}<br />
+        <b>UUID:</b> {String(task.uuid)}<br />
         <b>Content:</b> {task.content}<br />
         <b>Private:</b> {task.is_private ? "Yes" : "No"}<br />
         <b>Created by:</b> {task.user}<br />

@@ -29,13 +29,13 @@ const PageNavigator = ({ currentPage, setCurrentPage, totalPages }) => (
         alignItems: 'center',
         gap: '0.5rem',
         flexWrap: 'wrap',
-        background: 'rgba(255,255,255,0.95)',
         borderRadius: '8px 8px 0 0',
         boxShadow: '0 -2px 8px rgba(0,0,0,0.07)',
         padding: '0.5rem 1rem',
         minHeight: '44px',
         borderTop: 'none',
-        border: '1px solid #ff9800'
+        border: '1px solid #ff9800',
+        fontSize: '1rem'
       }}>
         <button
           onClick={() => setCurrentPage(currentPage - 1)}
@@ -59,7 +59,8 @@ const PageNavigator = ({ currentPage, setCurrentPage, totalPages }) => (
               cursor: currentPage === idx + 1 ? 'default' : 'pointer',
               outline: 'none',
               padding: '0.3rem 0.7rem',
-              margin: '0 0.1rem'
+              margin: '0 0.1rem',
+              transition: 'background 0.3s, color 0.3s'
             }}
             disabled={currentPage === idx + 1}
             aria-current={currentPage === idx + 1 ? 'page' : undefined}
@@ -84,14 +85,15 @@ const PageNavigator = ({ currentPage, setCurrentPage, totalPages }) => (
         alignItems: 'center',
         gap: '0.5rem',
         flexWrap: 'wrap',
-        background: 'rgba(255,255,255,0.95)',
         borderRadius: '8px 8px 0 0',
         boxShadow: '0 -2px 8px rgba(0,0,0,0.07)',
         padding: '0.5rem 1rem',
         minHeight: '44px',
         borderTop: 'none',
         color: '#888',
-        fontSize: '1rem'
+        fontSize: '1rem',
+        border: '1px solid #ff9800',
+        transition: 'background 0.3s, color 0.3s'
       }}>
         No pages
       </nav>
