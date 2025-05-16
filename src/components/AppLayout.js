@@ -49,13 +49,13 @@ const AppLayout = (props) => {
     const stored = localStorage.getItem('darkMode');
     return stored ? stored === 'true' : false;
   });
-  const [dateSortAsc, setDateSortAsc] = useState(true);
-  const [alphaSortAsc, setAlphaSortAsc] = useState(true);
-  const [activeSort, setActiveSort] = useState('date');
 
   useEffect(() => {
     localStorage.setItem('darkMode', darkMode);
   }, [darkMode]);
+
+  // Add state for which task's menu is open and its position
+  const [openTaskMenu, setOpenTaskMenu] = useState({ taskId: null, position: null });
 
   // Debug output for task visibility
   console.log("[DEBUG] Account:", account);
@@ -121,14 +121,12 @@ const AppLayout = (props) => {
       </div>
       {/* Alphabetic sort/filter bar for tasks */}
       <FilterNavigator
-        filteredTasks={filteredTasks}
-        setFilteredTasks={setFilteredTasks}
-        dateSortAsc={dateSortAsc}
-        setDateSortAsc={setDateSortAsc}
-        alphaSortAsc={alphaSortAsc}
-        setAlphaSortAsc={setAlphaSortAsc}
-        activeSort={activeSort}
-        setActiveSort={setActiveSort}
+        sortType={props.sortType}
+        sortOrder={props.sortOrder}
+        handleSortTypeChange={props.setSortType}
+        handleSortOrderChange={props.setSortOrder}
+        search={props.search}
+        handleSearch={props.handleSearch}
       />
       {/* List of tasks (filtered and sorted, paginated) */}
       <ul className="task-box">
@@ -140,7 +138,6 @@ const AppLayout = (props) => {
             key={task.uuid}
             onDelete={deleteTask}
             onClick={e => {
-              // Only open popup if the click is not on the checkbox or menu
               if (
                 e.target.tagName === 'INPUT' ||
                 e.target.closest('.settings')
@@ -150,6 +147,17 @@ const AppLayout = (props) => {
             onEdit={setEditTask}
             handleToggleCompleted={props.handleToggleCompleted}
             account={account}
+            toggleTaskPrivacy={props.toggleTaskPrivacy}
+            menuOpened={openTaskMenu.taskId === task.uuid ? openTaskMenu.position : null}
+            setMenuOpened={opened => {
+              if (opened) {
+                console.log('Opening menu for', task.uuid, opened);
+                setOpenTaskMenu({ taskId: task.uuid, position: opened });
+              } else {
+                console.log('Closing menu for', task.uuid);
+                setOpenTaskMenu({ taskId: null, position: null });
+              }
+            }}
           />
         ))}
       </ul>

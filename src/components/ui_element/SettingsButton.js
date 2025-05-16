@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 
-const SettingsButton = ({ onClick, darkMode, pressed }) => {
+const SettingsButton = ({ onClick, darkMode, pressed, onContextMenu }) => {
   const [settingsPressed, setSettingsPressed] = useState(false);
   // Use darkMode prop directly for accent color
   const accent = darkMode
@@ -33,6 +33,7 @@ const SettingsButton = ({ onClick, darkMode, pressed }) => {
       onMouseUp={() => setSettingsPressed(false)}
       onMouseLeave={() => setSettingsPressed(false)}
       onClick={onClick}
+      onContextMenu={onContextMenu}
     >
       <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
         {darkMode && (

@@ -4,6 +4,13 @@ import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
 
+// Disable right-click context menu everywhere
+if (typeof window !== 'undefined') {
+  window.addEventListener('contextmenu', function(e) {
+    e.preventDefault();
+  });
+}
+
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>

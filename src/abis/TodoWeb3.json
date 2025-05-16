@@ -61,6 +61,56 @@
     "inputs": [
       {
         "indexed": false,
+        "internalType": "string",
+        "name": "uuid",
+        "type": "string"
+      },
+      {
+        "indexed": false,
+        "internalType": "string",
+        "name": "content",
+        "type": "string"
+      },
+      {
+        "indexed": false,
+        "internalType": "bool",
+        "name": "completed",
+        "type": "bool"
+      },
+      {
+        "indexed": false,
+        "internalType": "bool",
+        "name": "is_private",
+        "type": "bool"
+      }
+    ],
+    "name": "TaskEdited",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "string",
+        "name": "uuid",
+        "type": "string"
+      },
+      {
+        "indexed": false,
+        "internalType": "bool",
+        "name": "is_private",
+        "type": "bool"
+      }
+    ],
+    "name": "TaskPrivacyToggled",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
         "internalType": "string[]",
         "name": "uuid_arr",
         "type": "string[]"
@@ -130,6 +180,34 @@
       }
     ],
     "name": "editTask",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "string",
+        "name": "_uuid",
+        "type": "string"
+      },
+      {
+        "internalType": "string",
+        "name": "_content",
+        "type": "string"
+      },
+      {
+        "internalType": "bool",
+        "name": "_completed",
+        "type": "bool"
+      },
+      {
+        "internalType": "bool",
+        "name": "_isPrivate",
+        "type": "bool"
+      }
+    ],
+    "name": "editTaskFull",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -311,6 +389,19 @@
       }
     ],
     "name": "toggleCompleted",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "string",
+        "name": "_uuid",
+        "type": "string"
+      }
+    ],
+    "name": "toggleTaskPrivacy",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"

@@ -55,7 +55,15 @@ function App() {
         totalPages,
         warnPopup,
         setWarnPopup,
-        handleToggleCompleted
+        handleToggleCompleted,
+        sortOrder,
+        setSortOrder,
+        sortType,
+        setSortType,
+        search,
+        handleSearch,
+        lastSortOrder,
+        toggleTaskPrivacy // <-- Add this line
     } = useTodoLogic();
 
     return (
@@ -87,6 +95,13 @@ function App() {
                 warnPopup={warnPopup}
                 setWarnPopup={setWarnPopup}
                 handleToggleCompleted={handleToggleCompleted}
+                sortType={sortType}
+                setSortType={setSortType}
+                sortOrder={sortOrder}
+                setSortOrder={setSortOrder}
+                search={search}
+                handleSearch={handleSearch}
+                toggleTaskPrivacy={toggleTaskPrivacy} // <-- Add this line
             />
         </>
     );

@@ -25,7 +25,7 @@ export function useTaskActions({ provider, todoWeb3, account, setWarnPopup, task
       let transaction = await todoWeb3.connect(signer).createTask(uuid, t.trim(), is_private);
       await transaction.wait();
       setNewTask("");
-      await getMyTasks(todoWeb3, true);
+      await getMyTasks(todoWeb3, true, true); // keepPage=true, keepFilter=true
     } catch (err) {
       if (err && (err.code === 'ACTION_REJECTED' || err.code === 4001)) {
         setWarnPopup({ open: true, message: 'Task creation cancelled by user.' });
@@ -58,7 +58,7 @@ export function useTaskActions({ provider, todoWeb3, account, setWarnPopup, task
       const signer = await provider.getSigner();
       let transaction = await todoWeb3.connect(signer).deleteTask(id);
       await transaction.wait();
-      await getMyTasks(todoWeb3);
+      await getMyTasks(todoWeb3, true, true); // keepPage=true, keepFilter=true
     } catch (err) {
       let msg = "";
       if (err && err.error && err.error.data && err.error.data.message) {
@@ -98,7 +98,7 @@ export function useTaskActions({ provider, todoWeb3, account, setWarnPopup, task
       }
       let transaction = await todoWeb3.connect(signer).clearCompletedTasks();
       await transaction.wait();
-      await getMyTasks(todoWeb3);
+      await getMyTasks(todoWeb3, true, true); // keepPage=true, keepFilter=true
     } catch (err) {
       let msg = "";
       if (err && err.error && err.error.data && err.error.data.message) {
@@ -131,7 +131,7 @@ export function useTaskActions({ provider, todoWeb3, account, setWarnPopup, task
       const signer = await provider.getSigner();
       let transaction = await todoWeb3.connect(signer).toggleCompleted(id);
       await transaction.wait();
-      await getMyTasks(todoWeb3);
+      await getMyTasks(todoWeb3, true, true); // keepPage=true, keepFilter=true
     } catch (err) {
       let msg = "";
       if (err && err.error && err.error.data && err.error.data.message) {
@@ -154,5 +154,38 @@ export function useTaskActions({ provider, todoWeb3, account, setWarnPopup, task
     }
   };
 
-  return { addTask, deleteTask, clearCompleted, handleToggleCompleted };
+  /**
+   * Toggles the privacy of a task (public/private) by ID.
+   * Only the owner can toggle privacy. Shows user-friendly error popups.
+   */
+  const toggleTaskPrivacy = async (id) => {
+    if (!todoWeb3 || !provider) return;
+    try {
+      const signer = await provider.getSigner();
+      let transaction = await todoWeb3.connect(signer).toggleTaskPrivacy(id);
+      await transaction.wait();
+      await getMyTasks(todoWeb3, true, true); // keepPage=true, keepFilter=true
+    } catch (err) {
+      let msg = "";
+      if (err && err.error && err.error.data && err.error.data.message) {
+        const match = err.error.data.message.match(/reverted with reason string '([^']+)'/);
+        if (match && match[1]) msg = match[1];
+      } else if (err && (err.code === 'ACTION_REJECTED' || err.code === 4001)) {
+        setWarnPopup({ open: true, message: 'Transaction cancelled by user.' });
+        return;
+      }
+      if (!msg && err.reason) {
+        msg = err.reason;
+      }
+      if (!msg && err.message) {
+        const match = err.message.match(/reverted with reason string '([^']+)'/);
+        if (match && match[1]) msg = match[1];
+        else msg = err.message;
+      }
+      if (!msg) msg = String(err);
+      setWarnPopup({ open: true, message: msg });
+    }
+  };
+
+  return { addTask, deleteTask, clearCompleted, handleToggleCompleted, toggleTaskPrivacy };
 }

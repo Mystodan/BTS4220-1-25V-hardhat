@@ -12,10 +12,14 @@ const EditTaskPopup = ({ task, onClose, todoWeb3, provider, account, reloadTasks
   const [completed, setCompleted] = useState(task ? task.completed : false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [isPrivate, setIsPrivate] = useState(task ? task.is_private : false);
+  const [privacyChanged, setPrivacyChanged] = useState(false);
 
   useEffect(() => {
     setContent(task ? task.content : "");
     setCompleted(task ? task.completed : false);
+    setIsPrivate(task ? task.is_private : false);
+    setPrivacyChanged(false);
     setError("");
   }, [task]);
 
@@ -28,12 +32,8 @@ const EditTaskPopup = ({ task, onClose, todoWeb3, provider, account, reloadTasks
     setError("");
     try {
       const signer = await provider.getSigner();
-      if (content !== task.content) {
-        await (await todoWeb3.connect(signer).editTask(task.uuid, content)).wait();
-      }
-      if (completed !== task.completed) {
-        await (await todoWeb3.connect(signer).toggleCompleted(task.uuid)).wait();
-      }
+      // Use the new atomic contract function
+      await (await todoWeb3.connect(signer).editTaskFull(task.uuid, content, completed, isPrivate)).wait();
       if (reloadTasks) await reloadTasks();
       onClose();
     } catch (err) {
@@ -45,6 +45,12 @@ const EditTaskPopup = ({ task, onClose, todoWeb3, provider, account, reloadTasks
     } finally {
       setLoading(false);
     }
+  };
+
+  // Only update local state and mark as changed
+  const handleTogglePrivate = (e) => {
+    setIsPrivate(e.target.checked);
+    setPrivacyChanged(e.target.checked !== task.is_private);
   };
 
   if (!task) return null;
@@ -88,6 +94,18 @@ const EditTaskPopup = ({ task, onClose, todoWeb3, provider, account, reloadTasks
                 style={{ marginRight: 8 }}
               />
               Completed
+            </label>
+          </div>
+          <div style={{ marginBottom: '1rem' }}>
+            <label style={{ fontWeight: 600 }}>
+              <input
+                type="checkbox"
+                checked={isPrivate}
+                onChange={handleTogglePrivate}
+                disabled={loading}
+                style={{ marginRight: 8 }}
+              />
+              Private
             </label>
           </div>
         </>

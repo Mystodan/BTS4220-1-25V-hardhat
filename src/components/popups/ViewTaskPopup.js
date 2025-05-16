@@ -1,6 +1,13 @@
 import React from "react";
 import Popup from "./Popup";
 
+const formatDate = ts => {
+  if (!ts || isNaN(ts)) return "-";
+  // If it's in the future, probably ms, else s
+  const date = ts > 1e12 ? new Date(ts) : new Date(ts * 1000);
+  return date.toLocaleString();
+};
+
 /**
  * ViewTaskPopup
  * -------------
@@ -20,10 +27,10 @@ const ViewTaskPopup = ({ task, onClose }) => {
         <b>UUID:</b> {String(task.uuid)}<br />
         <b>Content:</b> {task.content}<br />
         <b>Private:</b> {task.is_private ? "Yes" : "No"}<br />
-        <b>Created by:</b> {task.user}<br />
+        <b>User:</b> {task.user}<br />
         <b>Completed:</b> {task.completed ? "Yes" : "No"}<br />
-        <b>Created At:</b> {task.createdAt && !isNaN(task.createdAt) ? new Date(task.createdAt * 1000).toLocaleString() : "-"}<br />
-        <b>Completed At:</b> {task.completedAt && !isNaN(task.completedAt) && task.completedAt !== 0 ? new Date(task.completedAt * 1000).toLocaleString() : "-"}
+        <b>Created At:</b> {formatDate(task.createdAt)}<br />
+        <b>Completed At:</b> {task.completedAt && !isNaN(task.completedAt) && task.completedAt !== 0 ? formatDate(task.completedAt) : "-"}
       </div>
     </Popup>
   );

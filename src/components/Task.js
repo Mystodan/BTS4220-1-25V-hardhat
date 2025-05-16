@@ -44,7 +44,24 @@ const Task = ({ task, todoWeb3, provider, id, onDelete, onClick, onEdit }) => {
           onClick={e => e.stopPropagation()}
         />
         <label htmlFor={id} style={{ margin: 0, cursor: 'pointer', userSelect: 'none', flex: 1, minWidth: 0 }}>
-          <p className={completed ? "checked" : ""} style={{ margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{task.content}</p>
+          <p
+            className={
+              `${completed ? "checked " : ""}` +
+              (task.user && account && task.user.toLowerCase() === account.toLowerCase()
+                ? "owned-by-user"
+                : task.user
+                ? "owned"
+                : "")
+            }
+            style={{
+              margin: 0,
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis'
+            }}
+          >
+            {task.content}
+          </p>
         </label>
       </div>
       <div style={{ display: 'flex', alignItems: 'center', marginLeft: 'auto', position: 'relative' }}>

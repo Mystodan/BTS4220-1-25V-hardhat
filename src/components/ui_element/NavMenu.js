@@ -36,19 +36,9 @@ const NavMenu = ({ activeFilter, filterTasks, tasks, setActiveFilter, setFiltere
     </span>
     {/* Filter: Toggle between public and private tasks */}
     <span
-      onClick={() => {
-        const next = activeFilter === "public" ? "private" : "public";
-        setActiveFilter(next);
-        setFilteredTasks(
-          tasks.filter(task =>
-            next === "private"
-              ? task.is_private && task.user && account && task.user.toLowerCase() === account.toLowerCase()
-              : !task.is_private
-          )
-        );
-      }}
+      onClick={filterTasks}
       className={`${activeFilter === "public" ? "public" : "private"}${(activeFilter === "public" || activeFilter === "private") ? " active" : ""}`}
-      id="privacy-toggle"
+      id={activeFilter === "public" ? "private" : "public"}
       style={{ marginLeft: '1rem', cursor: 'pointer', userSelect: 'none' }}
       tabIndex={0}
       role="button"

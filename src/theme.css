@@ -1,42 +1,147 @@
-/* Unified theme CSS for both dark and light mode gradients */
-
+/* --- THEME VARIABLES --- */
 :root {
+  --task-gradient-text-dark: linear-gradient(90deg, #8854d0 0%, #a18cd1 100%);
   --task-gradient-text: linear-gradient(90deg, #ff9800 0%, #ffd580 100%);
   --task-margin-bottom: 18px;
   --task-padding-bottom: 16px;
   --task-border-bottom: 1px solid #ccc;
   --task-min-height: 48px;
   --task-line-height: 1.2;
+  --color-primary: #ff9800;
+  --color-primary-dark: #ffb300;
+  --color-accent: #f12711;
+  --color-accent-hover: #ffa726;
+  --color-bg: #fff;
+  --color-bg-alt: #f5f5f5;
+  --color-text: #222;
+  --color-text-light: #444;
+  --color-border: #e0e0e0;
+  --color-border-alt: #ccc;
+  --color-menu-bg: #fff;
+  --color-menu-hover: #f5f5f5;
+  --color-input-bg: #fff;
+  --color-input-border: #ccc;
+  --color-shadow: 0 1px 4px rgba(0,0,0,0.04);
+  --task-bg-light: #fff;
+  --task-bg-dark: #232946;
 }
 
-.wrapper.darkmode {
-  --task-gradient-text: linear-gradient(90deg, #8854d0 0%, #a18cd1 100%);
-  --task-margin-bottom: 18px;
-  --task-padding-bottom: 16px;
-  --task-border-bottom: 1px solid #a18cd1;
-  --task-min-height: 48px;
-  --task-line-height: 1.2;
+/* --- LIGHT MODE (DEFAULT) --- */
+.wrapper, body {
+  background: var(--task-bg-light) !important;
 }
 
-/* --- LIGHT MODE (default) --- */
+::selection {
+  color: #fff;
+  background: var(--color-accent);
+}
+
+.task-input ion-icon {
+  color: #999;
+}
+
+.task-input input {
+  border: 1px solid #999;
+  background: var(--color-input-bg);
+}
+
+.task-input input:focus,
+.task-input input.active {
+  border: 2px solid var(--color-accent);
+}
+
+.task-input input::placeholder {
+  color: #bfbfbf;
+}
+
+.filters span {
+  color: var(--color-text-light);
+}
+
+.filters span.active {
+  color: var(--color-accent);
+  background: rgba(241, 39, 17, 0.08);
+}
+
 .clear-btn {
+  color: #fff;
+  background: var(--task-gradient-text);
   background: linear-gradient(90deg, #ff9800 0%, #ffd580 100%) !important;
   border: 1.5px solid #ff9800 !important;
-  color: #fff !important;
 }
 .clear-btn:disabled {
   background: #eee !important;
   color: #aaa !important;
   border: 1.5px solid #ff9800 !important;
 }
-.settings-popup button {
-  background: linear-gradient(90deg, #ff9800 0%, #ffd580 100%) !important;
+
+.settings .task-menu {
+  background: var(--color-menu-bg);
+  z-index: 10;
+  position: absolute;
+}
+
+.settings li:hover {
+  background: var(--color-menu-hover);
+  color: var(--color-accent);
+}
+
+.task label input {
+  accent-color: var(--color-accent);
+}
+
+.task-box .task {
+  border-bottom: 1px solid var(--color-border-alt);
+}
+
+.task-box::-webkit-scrollbar-track {
+  background: var(--color-accent);
+}
+
+.task-box::-webkit-scrollbar-thumb {
+  background: #e6e6e6;
+}
+
+/* --- UNIFIED open-task-menu BUTTON STYLES (NO BORDER, NEW DARKMODE COLOR) --- */
+.open-task-menu,
+.open-task-menu-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: linear-gradient(90deg, #ffd580 0%, #ff9800 100%); /* reversed for light mode */
   border: none !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(136,84,208,0.10);
+  color: #fff;
+  font-size: 1.6em;
+  cursor: pointer;
+  transition: background 0.25s, box-shadow 0.18s, filter 0.18s; /* removed transform from transition */
+  outline: none;
+  margin-left: 8px;
+  padding: 0;
+  position: relative;
+  z-index: 2;
+}
+.wrapper.darkmode .open-task-menu,
+.wrapper.darkmode .open-task-menu-btn {
+  background: linear-gradient(90deg, #8854d0 0%, #a18cd1 100%) !important; /* reversed for dark mode */
   color: #fff !important;
 }
-.settings-popup .toggle-switch-track {
-  background: linear-gradient(90deg, #ff9800 0%, #ffd580 100%) !important;
+.open-task-menu:hover, .open-task-menu:focus,
+.open-task-menu-btn:hover, .open-task-menu-btn:focus {
+  background: linear-gradient(90deg, #ffa726 0%, #ff9800 100%);
+  filter: brightness(1.08);
+  box-shadow: 0 4px 16px rgba(136,84,208,0.18);
+  /* removed transform: scale(1.08); */
 }
+.wrapper.darkmode .open-task-menu:hover, .wrapper.darkmode .open-task-menu:focus,
+.wrapper.darkmode .open-task-menu-btn:hover, .wrapper.darkmode .open-task-menu-btn:focus {
+  background: linear-gradient(90deg, #4f8cff 0%, #1e2a78 100%) !important;
+  filter: brightness(1.10);
+}
+
 .page-navigator {
   border: 1px solid #ff9800 !important;
 }
@@ -51,7 +156,7 @@
   color: #aaa !important;
 }
 
-/* --- POPUP STYLES --- */
+/* --- POPUP STYLES (LIGHT) --- */
 .popup-content {
   background: #fff;
   color: #222;
@@ -79,11 +184,102 @@
   color: #aaa;
 }
 
-/* --- DARK MODE --- */
-.wrapper.darkmode {
-  background: #232946 !important;
+/* --- FILTER TEXT STYLES (LIGHT) --- */
+.filters span {
+  display: inline-block;
+  background: none;
+  color: inherit;
+  border-radius: 6px;
+  padding: 2px 10px;
+  margin: 0 -5px;
+  font-weight: 500;
+  transition: background 0.3s, color 0.3s;
+  cursor: pointer;
+  vertical-align: middle;
+  line-height: 1.2;
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: visible;
+}
+.filters span.active {
+  display: inline-block;
+  background: linear-gradient(90deg, #ff9800 0%, #ffd580 100%);
+  color: #fff !important;
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgba(255,152,0,0.10);
+  text-decoration: none;
+  border-radius: 6px;
+  padding: 2px 10px;
+  margin: 0 1px;
+  white-space: nowrap;
+  overflow: visible;
+}
+
+.task {
+  min-height: var(--task-min-height) !important;
+  line-height: var(--task-line-height) !important;
+  margin-bottom: 18px !important;
+  padding-bottom: 16px !important;
+  border-bottom: 1px solid #ccc !important;
+  background: var(--task-bg-light) !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  z-index: 1;
+}
+.task-box {
+  position: relative;
+  border-bottom: none;
+  padding-bottom: 0 !important;
+  margin-bottom: 0 !important;
+}
+.task-box::after {
+  content: "";
+  display: none !important;
+  width: 100%;
+  max-width: 100%;
+  height: 0;
+  border-bottom: 1px solid #ccc;
+  margin: 0 0 0 0;
+}
+
+.task:hover label p {
+  opacity: 0.6;
+  transition: opacity 0.18s;
+}
+
+.task label p {
+  opacity: 0.55;
+  transition: opacity 0.18s;
+}
+.task label p.owned {
+  opacity: 0.7;
+}
+.task label p.owned-by-user {
+  opacity: 0.85;
+}
+.task:hover label p,
+.task:focus-within label p {
+  opacity: 1;
+}
+
+/* --- DARK MODE OVERRIDES --- */
+.wrapper.darkmode, body.darkmode {
+  --task-gradient-text: linear-gradient(90deg, #8854d0 0%, #a18cd1 100%);
+  --task-border-bottom: 1px solid #a18cd1;
+  --color-bg: #181818;
+  --color-bg-alt: #232323;
+  --color-text: #eee;
+  --color-text-light: #bbb;
+  --color-border: #333;
+  --color-border-alt: #444;
+  --color-menu-bg: #232323;
+  --color-menu-hover: #333;
+  --color-input-bg: #232323;
+  --color-input-border: #444;
+  background: var(--task-bg-dark) !important;
   color: #fff !important;
 }
+
 .wrapper.darkmode .task-input input {
   background: #232946 !important;
   color: #fff !important;
@@ -160,13 +356,15 @@
 
 /* --- DARK MODE: Task Menu --- */
 .wrapper.darkmode .task {
-  background: #232946 !important;
+  background: var(--task-bg-dark) !important;
   color: #fff !important;
   border-bottom: var(--task-border-bottom) !important;
   margin-bottom: var(--task-margin-bottom) !important;
   padding-bottom: var(--task-padding-bottom) !important;
   min-height: var(--task-min-height) !important;
   line-height: var(--task-line-height) !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
 }
 .wrapper.darkmode .task .checked {
   color: #a18cd1 !important;
@@ -183,9 +381,8 @@
 }
 .wrapper.darkmode .open-task-menu,
 .wrapper.darkmode .open-task-menu.active {
-  background: #232946 !important;
   color: #a18cd1 !important;
-  border: 1px solid #a18cd1 !important;
+ 
 }
 .wrapper.darkmode .settings {
   background: #232946 !important;
@@ -197,39 +394,62 @@
 .wrapper.darkmode .task-box .task:last-child,
 .task-box .task:last-child {
   border-bottom: none !important;
-  margin-bottom: 0 !important;
-  padding-bottom: 0 !important;
+  min-height: var(--task-min-height) !important;
+  line-height: var(--task-line-height) !important;
+  display: flex;
+  align-items: center;
 }
 
-/* --- FILTER TEXT STYLES --- */
-.filters span {
-  display: inline-block;
-  background: none;
-  color: inherit;
-  border-radius: 6px;
-  padding: 2px 10px;
-  margin: 0 -5px;
-  font-weight: 500;
-  transition: background 0.3s, color 0.3s;
-  cursor: pointer;
-  vertical-align: middle;
-  line-height: 1.2;
-  max-width: 100%;
-  white-space: nowrap;
-  overflow: visible;
+/* --- UNIFIED TASK STYLES (THEME-DRIVEN, NO OVERLAPS) --- */
+.task,
+.task-box .task,
+.wrapper.darkmode .task,
+.wrapper.darkmode .task-box .task {
+  min-height: var(--task-min-height) !important;
+  line-height: var(--task-line-height) !important;
+  display: flex;
+  align-items: center;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  background: var(--task-bg-light) !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  border-bottom: 1px solid var(--color-border-alt) !important;
+  margin-bottom: var(--task-margin-bottom) !important;
+  padding-bottom: var(--task-padding-bottom) !important;
 }
-.filters span.active {
-  display: inline-block;
-  background: linear-gradient(90deg, #ff9800 0%, #ffd580 100%);
+.wrapper.darkmode .task,
+.wrapper.darkmode .task-box .task {
+  background: var(--task-bg-dark) !important;
   color: #fff !important;
-  font-weight: 700;
-  box-shadow: 0 2px 8px rgba(255,152,0,0.10);
-  text-decoration: none;
-  border-radius: 6px;
-  padding: 2px 10px;
-  margin: 0 1px;
-  white-space: nowrap;
-  overflow: visible;
+  border-bottom: var(--task-border-bottom) !important;
+}
+/* Fix: Ensure last task has same height and padding as others */
+.task-box .task:last-child,
+.wrapper.darkmode .task-box .task:last-child {
+  border-bottom: none !important;
+  /* Do NOT remove margin-bottom or padding-bottom for last child! */
+}
+
+/* Remove any background from .task label and .task label p */
+.task label,
+.task label p {
+  background: none !important;
+  box-shadow: none !important;
+}
+
+/* Ensure .task label and .task label p are vertically centered */
+.task label {
+  display: flex;
+  align-items: center;
+  height: 100%;
+}
+.task label p {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  margin-left: 12px;
+  margin-bottom: 0;
 }
 
 .wrapper.darkmode .filters span {
@@ -250,30 +470,100 @@
   overflow: visible;
 }
 
-/* ...rest of theme.css... */
-.task {
-  min-height: var(--task-min-height) !important;
-  line-height: var(--task-line-height) !important;
-  margin-bottom: 18px !important;
-  padding-bottom: 16px !important;
-  border-bottom: 1px solid #ccc !important;
-}
-.wrapper.darkmode .task {
-  border-bottom: 1px solid #a18cd1 !important;
-}
-.task-box {
-  position: relative;
-  border-bottom: none;
-}
-.task-box::after {
-  content: "";
-  display: block;
-  width: 100%;
-  max-width: 100%;
-  height: 0;
-  border-bottom: 1px solid #ccc;
-  margin: 0 0 0 0;
-}
 .wrapper.darkmode .task-box::after {
   border-bottom: 1px solid #a18cd1;
+}
+
+.wrapper.darkmode .task-menu li:hover {
+  background: linear-gradient(90deg, #6d3bbd 0%, #7a6bb7 100%);
+  color: transparent;
+  background-clip: padding-box;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  box-shadow: 0 2px 8px rgba(136,84,208,0.18);
+  animation: pulse-scale 0.7s infinite alternate;
+}
+
+.wrapper.darkmode .open-task-menu-btn {
+  background: linear-gradient(90deg, #a18cd1 0%, #8854d0 100%) !important; /* reversed for dark mode */
+  border: none !important;
+  z-index: 2;
+}
+
+.wrapper.darkmode .open-task-menu:hover, .wrapper.darkmode .open-task-menu:focus {
+  background: linear-gradient(90deg, #a18cd1 0%, #8854d0 100%);
+  filter: brightness(1.10);
+}
+
+.wrapper.darkmode .task-box .task:last-child {
+  border-bottom: none;
+}
+.wrapper.darkmode .task label p.owned-by-user {
+  color: #e3d1ff !important; /* much lighter for current user's tasks in dark mode */
+  font-weight: 700;
+}
+.wrapper.darkmode .task label p.owned-by-user {
+  color: #e3d1ff !important; /* much lighter for current user's tasks in dark mode */
+  font-weight: 700;
+}
+
+@keyframes icon-wobble {
+  0% { transform: rotate(0deg) scale(1); }
+  20% { transform: rotate(-10deg) scale(1.08); }
+  40% { transform: rotate(8deg) scale(0.98); }
+  60% { transform: rotate(-6deg) scale(1.04); }
+  80% { transform: rotate(6deg) scale(0.96); }
+  100% { transform: rotate(0deg) scale(1); }
+}
+.open-task-menu:hover span, .open-task-menu:focus span {
+  animation: icon-wobble 0.7s infinite;
+}
+
+/* --- SOFTER BLUE GRADIENT FOR open-task-menu BUTTON IN DARK MODE --- */
+.wrapper.darkmode .open-task-menu,
+.wrapper.darkmode .open-task-menu-btn {
+  background: linear-gradient(90deg,  #6fa8ff 0%,#2a3566 100%) !important;
+  color: #fff !important;
+}
+.wrapper.darkmode .open-task-menu:hover, .wrapper.darkmode .open-task-menu:focus,
+.wrapper.darkmode .open-task-menu-btn:hover, .wrapper.darkmode .open-task-menu-btn:focus {
+  background: linear-gradient(90deg, #6fa8ff 0%, #2a3566 100%) !important;
+  filter: brightness(1.08);
+}
+
+/* --- Ensure open-task-menu, open-task-menu-btn, and .settings are above all except popups --- */
+
+.open-task-menu-btn {
+  z-index: 10 !important;
+ 
+}
+
+/* Popups should always be above everything else */
+.popup-overlay,
+.popup-content {
+  z-index: 2999 !important;
+}
+
+/* If you have a .SettingsButton or similar, ensure it is also above normal content */
+.SettingsButton,
+.settings-button {
+  z-index: 1002 !important;
+  position: relative;
+}
+
+/* Ensure .popup-overlay and .popup-content remain at z-index: 2000+ in popup.css */
+
+/* Ensure dropdown menus are never clipped by parent containers */
+.task-box,
+.settings,
+.task {
+  overflow: visible !important;
+  position: static !important;
+}
+
+/* Ensure the open-task-menu dropdown menu is always on top of all buttons and UI except popups */
+.task-menu,
+.settings .task-menu,
+.open-task-menu-dropdown {
+  z-index: 2998 !important;
 }

@@ -4,6 +4,7 @@ import TodoWeb3 from "../abis/TodoWeb3.json";
 import config from "../config.json";
 import { v4 as uuidv4 } from "uuid";
 import WarnPopup from "../components/popups/WarnPopup";
+import { useTaskActions } from "./useTasksSubHooks/useTaskActions";
 
 // Enum for filter types
 export const FilterType = Object.freeze({
@@ -27,8 +28,24 @@ export function useTodoLogic() {
     const [popupTask, setPopupTask] = useState(null);
     const clearBtnRef = useRef(null);
     const [currentPage, setCurrentPage] = useState(1);
-    const TASKS_PER_PAGE = 8;
+    const TASKS_PER_PAGE = 7;
     const [warnPopup, setWarnPopup] = useState({ open: false, message: "" });
+    const [sortType, setSortType] = useState('date'); // 'date' or 'alpha'
+    const [sortOrder, setSortOrder] = useState('desc'); // 'asc' or 'desc'
+    const [search, setSearch] = useState("");
+    const [lastFilter, setLastFilter] = useState(activeFilter);
+    // --- NEW: Persistent refs for UI state ---
+    const filterRef = useRef(activeFilter);
+    const sortTypeRef = useRef(sortType);
+    const sortOrderRef = useRef(sortOrder);
+    const searchRef = useRef(search);
+    const pageRef = useRef(currentPage);
+    // Keep refs in sync with state
+    useEffect(() => { filterRef.current = activeFilter; }, [activeFilter]);
+    useEffect(() => { sortTypeRef.current = sortType; }, [sortType]);
+    useEffect(() => { sortOrderRef.current = sortOrder; }, [sortOrder]);
+    useEffect(() => { searchRef.current = search; }, [search]);
+    useEffect(() => { pageRef.current = currentPage; }, [currentPage]);
 
     // --- Wallet Connection ---
     const checkOrRequestWalletConnection = async () => {
@@ -74,57 +91,111 @@ export function useTodoLogic() {
     };
 
     // --- Task Fetching ---
-    const getMyTasks = async (todoWeb3Instance, keepPage = false) => {
+    const getMyTasks = async (todoWeb3Instance, keepPage = false, keepFilter = true) => {
         if (!provider || !todoWeb3Instance) return;
+        // Use refs to guarantee previous UI state
+        const prevFilter = filterRef.current;
+        const prevSortType = sortTypeRef.current;
+        const prevSortOrder = sortOrderRef.current;
+        const prevSearch = searchRef.current;
+        const prevPage = pageRef.current;
         const signer = provider.getSigner();
         const myTasks = await todoWeb3Instance.connect(signer).getMyTasks();
         // Filter out deleted tasks (content === "")
         const filtered = myTasks.filter(task => task.content && task.content !== "");
+        // Map BigNumber fields to numbers for easier use in JS
         const mappedTasks = filtered.map(task => ({
             ...task,
-            createdAt: task.createdAt && task.createdAt._isBigNumber ? Number(task.createdAt) : (typeof task.createdAt === 'number' ? task.createdAt : undefined),
-            completedAt: task.completedAt && task.completedAt._isBigNumber ? Number(task.completedAt) : (typeof task.completedAt === 'number' ? task.completedAt : undefined)
+            createdAt: task.createdAt && task.createdAt._isBigNumber ? Number(task.createdAt) : (typeof task.createdAt === 'number' ? task.createdAt : (task.createdAt ? parseInt(task.createdAt) : 0)),
+            completedAt: task.completedAt && task.completedAt._isBigNumber ? Number(task.completedAt) : (typeof task.completedAt === 'number' ? task.completedAt : (task.completedAt ? parseInt(task.completedAt) : 0))
         }));
         setTasks(mappedTasks);
-        applyCurrentFilter(mappedTasks, undefined, keepPage);
+        // Always restore previous UI state after reload
+        applyCurrentFilterAndSort(
+            mappedTasks,
+            keepFilter ? prevFilter : FilterType.ALL,
+            keepPage ? prevPage : false,
+            prevSortType,
+            prevSortOrder,
+            prevSearch
+        );
+        if (keepPage && prevPage) setCurrentPage(prevPage);
     };
 
-    // --- Filtering & Sorting ---
-    const sortByDateDesc = arr => arr.slice().sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+    // Unified sort function
+    const sortTasks = (arr, type = sortType, order = sortOrder) => {
+        if (type === 'date') {
+            return arr.slice().sort((a, b) =>
+                order === 'desc'
+                    ? (b.createdAt || 0) - (a.createdAt || 0)
+                    : (a.createdAt || 0) - (b.createdAt || 0)
+            );
+        } else if (type === 'alpha') {
+            return arr.slice().sort((a, b) =>
+                order === 'desc'
+                    ? b.content.localeCompare(a.content)
+                    : a.content.localeCompare(b.content)
+            );
+        }
+        return arr;
+    };
 
-    const filterTasksByType = (tasksArr, filter, account) => {
+    // Fuzzy match: returns true if all chars in pattern appear in order in str (unified)
+    function fuzzyMatch(str, pattern) {
+        str = (str || "").toLowerCase();
+        pattern = (pattern || "").toLowerCase();
+        let j = 0;
+        for (let i = 0; i < str.length && j < pattern.length; i++) {
+            if (str[i] === pattern[j]) j++;
+        }
+        return j === pattern.length;
+    }
+
+    // Unified filter function (with fuzzy search)
+    const filterTasksByType = (tasksArr, filter, account, searchString = "") => {
+        let filtered = tasksArr;
         if (filter === FilterType.PRIVATE) {
-            return tasksArr.filter(
+            filtered = filtered.filter(
                 (task) => task.is_private && task.user && account && task.user.toLowerCase() === account.toLowerCase()
             );
         } else if (filter === FilterType.PUBLIC) {
-            return tasksArr.filter((task) => !task.is_private);
+            filtered = filtered.filter((task) => !task.is_private);
         } else if (filter === FilterType.ALL) {
-            return tasksArr.filter(
+            filtered = filtered.filter(
                 (task) =>
                     !task.is_private ||
                     (task.is_private && task.user && account && task.user.toLowerCase() === account.toLowerCase())
             );
         } else if (filter === FilterType.PENDING) {
-            return tasksArr.filter(
+            filtered = filtered.filter(
                 (task) =>
                     !task.completed &&
                     (!task.is_private || (task.is_private && task.user && account && task.user.toLowerCase() === account.toLowerCase()))
             );
         } else if (filter === FilterType.COMPLETED) {
-            return tasksArr.filter(
+            filtered = filtered.filter(
                 (task) =>
                     task.completed &&
                     (!task.is_private || (task.is_private && task.user && account && task.user.toLowerCase() === account.toLowerCase()))
             );
         }
-        return tasksArr;
+        // Unified fuzzy search
+        if (searchString && searchString.trim() !== "") {
+            const s = searchString.trim().toLowerCase();
+            filtered = filtered.filter(task => fuzzyMatch(task.content || "", s));
+        }
+        return filtered;
     };
 
-    const applyCurrentFilter = (tasksArr, filterOverride, keepPage = false) => {
-        const filter = filterOverride || activeFilter;
-        let filtered = filterTasksByType(tasksArr, filter, account);
-        filtered = sortByDateDesc(filtered);
+    // Unified apply function
+    const applyCurrentFilterAndSort = (tasksArr, filterOverride, keepPage = false, sortTypeOverride, sortOrderOverride, searchOverride) => {
+        const filter = filterOverride !== undefined ? filterOverride : lastFilter;
+        const type = sortTypeOverride || sortType;
+        const order = sortOrderOverride || sortOrder;
+        const searchString = typeof searchOverride === "string" ? searchOverride : search;
+        setLastFilter(filter);
+        let filtered = filterTasksByType(tasksArr, filter, account, searchString);
+        filtered = sortTasks(filtered, type, order);
         setFilteredTasks(filtered);
         if (!keepPage) setCurrentPage(1);
     };
@@ -132,156 +203,16 @@ export function useTodoLogic() {
     // --- Task Input ---
     const handleChange = (e) => setNewTask(e.currentTarget.value);
 
-    // --- Task Actions ---
-    const addTask = async (t, is_private = false) => {
-        if (!t || t.trim() === "") return;
-        try {
-            const signer = await provider.getSigner();
-            const uuid = uuidv4();
-            let transaction = await todoWeb3.connect(signer).createTask(uuid, t.trim(), is_private);
-            await transaction.wait();
-            setNewTask("");
-            await getMyTasks(todoWeb3, true);
-        } catch (err) {
-            if (err && (err.code === 'ACTION_REJECTED' || err.code === 4001)) {
-                setWarnPopup({ open: true, message: 'Task creation cancelled by user.' });
-                return;
-            }
-            let msg = "";
-            if (err && err.error && err.error.data && err.error.data.message) {
-                const match = err.error.data.message.match(/reverted with reason string '([^']+)'/);
-                if (match && match[1]) msg = match[1];
-            }
-            if (!msg && err.reason) {
-                msg = err.reason;
-            }
-            if (!msg && err.message) {
-                const match = err.message.match(/reverted with reason string '([^']+)'/);
-                if (match && match[1]) msg = match[1];
-                else msg = err.message;
-            }
-            if (!msg) msg = String(err);
-            setWarnPopup({ open: true, message: msg });
-        }
-    };
-
-    const deleteTask = async (id) => {
-        // Defensive: check if task exists before contract call
-        const task = tasks.find(t => t.uuid === id);
-        if (!task || !task.content) {
-            setWarnPopup({ open: true, message: "Task does not exist or already deleted." });
-            return;
-        }
-        try {
-            const signer = await provider.getSigner();
-            let transaction = await todoWeb3.connect(signer).deleteTask(id);
-            await transaction.wait();
-            await getMyTasks(todoWeb3);
-        } catch (err) {
-            let msg = "";
-            // Try to extract reason string from error
-            if (err && err.error && err.error.data && err.error.data.message) {
-                // Hardhat/ethers style: ...reverted with reason string '...'
-                const match = err.error.data.message.match(/reverted with reason string '([^']+)'/);
-                if (match && match[1]) msg = match[1];
-            } else if (err && (err.code === 'ACTION_REJECTED' || err.code === 4001)) {
-                // User rejected the transaction in wallet
-                setWarnPopup({ open: true, message: 'Transaction cancelled by user.' });
-                return;
-            }
-            if (!msg && err && err.reason) {
-                msg = err.reason;
-            }
-            if (!msg && err && err.message) {
-                // Try to extract from message
-                const match = err.message.match(/reverted with reason string '([^']+)'/);
-                if (match && match[1]) msg = match[1];
-                else msg = err.message;
-            }
-            if (!msg) msg = String(err);
-            setWarnPopup({ open: true, message: msg });
-        }
-    };
-
-    const clearCompleted = async () => {
-        if (!todoWeb3 || !provider) return;
-        try {
-            const signer = await provider.getSigner();
-            // Only attempt to clear if there are completed tasks owned by the user
-            const myCompleted = tasks.filter(
-                t => t.completed && t.user && account && t.user.toLowerCase() === account.toLowerCase()
-            );
-            if (myCompleted.length === 0) {
-                setWarnPopup({ open: true, message: "No completed tasks you own to clear." });
-                return;
-            }
-            let transaction = await todoWeb3.connect(signer).clearCompletedTasks();
-            await transaction.wait();
-            await getMyTasks(todoWeb3);
-        } catch (err) {
-            let msg = "";
-            if (err && err.error && err.error.data && err.error.data.message) {
-                const match = err.error.data.message.match(/reverted with reason string '([^']+)'/);
-                if (match && match[1]) msg = match[1];
-            } else if (err && (err.code === 'ACTION_REJECTED' || err.code === 4001)) {
-                // User rejected the transaction in wallet
-                setWarnPopup({ open: true, message: 'Transaction cancelled by user.' });
-                return;
-            }
-            if (!msg && err.reason) {
-                msg = err.reason;
-            }
-            if (!msg && err.message) {
-                const match = err.message.match(/reverted with reason string '([^']+)'/);
-                if (match && match[1]) msg = match[1];
-                else msg = err.message;
-            }
-            if (!msg) msg = String(err);
-            setWarnPopup({ open: true, message: msg });
-        }
-    };
-
-    const handleToggleCompleted = async (id) => {
-        // Defensive: check if task exists before contract call
-        const task = tasks.find(t => t.uuid === id);
-        if (!task || !task.content) {
-            setWarnPopup({ open: true, message: "Task does not exist or already deleted." });
-            return;
-        }
-        if (!todoWeb3 || !provider) return;
-        try {
-          const signer = await provider.getSigner();
-          let transaction = await todoWeb3.connect(signer).toggleCompleted(id);
-          await transaction.wait();
-          await getMyTasks(todoWeb3); // Refresh tasks after toggling
-        } catch (err) {
-          let msg = "";
-          if (err && err.error && err.error.data && err.error.data.message) {
-            const match = err.error.data.message.match(/reverted with reason string '([^']+)'/);
-            if (match && match[1]) msg = match[1];
-          } else if (err && (err.code === 'ACTION_REJECTED' || err.code === 4001)) {
-            // User rejected the transaction in wallet
-            setWarnPopup({ open: true, message: 'Transaction cancelled by user.' });
-            return;
-          }
-          if (!msg && err.reason) {
-            msg = err.reason;
-          }
-          if (!msg && err.message) {
-            const match = err.message.match(/reverted with reason string '([^']+)'/);
-            if (match && match[1]) msg = match[1];
-            else msg = err.message;
-          }
-          if (!msg) msg = String(err);
-          setWarnPopup({ open: true, message: msg });
-        }
-      };
+    // --- Actions logic ---
+    const { addTask, deleteTask, clearCompleted, handleToggleCompleted, toggleTaskPrivacy } = useTaskActions({ provider, todoWeb3, account, setWarnPopup, tasks, setNewTask, getMyTasks });
 
     // --- UI Event Handlers ---
     const filterTasks = (e) => {
         const filterKey = e.currentTarget.id.toUpperCase();
         setActiveFilter(FilterType[filterKey] || e.currentTarget.id);
-        applyCurrentFilter(tasks, FilterType[filterKey] || e.currentTarget.id);
+        setLastFilter(FilterType[filterKey] || e.currentTarget.id);
+        // Always apply current search when switching tabs
+        applyCurrentFilterAndSort(tasks, FilterType[filterKey] || e.currentTarget.id, false, undefined, undefined, search);
     };
 
     const handleKeyDown = async (e) => {
@@ -297,6 +228,21 @@ export function useTodoLogic() {
         e.preventDefault();
         const isPrivate = activeFilter === FilterType.PRIVATE;
         await addTask(newTask, isPrivate);
+    };
+
+    // Unified sort type/order handlers
+    const handleSortTypeChange = (type) => {
+        setSortType(type);
+        applyCurrentFilterAndSort(tasks, lastFilter, true, type, sortOrder);
+    };
+    const handleSortOrderChange = (order) => {
+        setSortOrder(order);
+        applyCurrentFilterAndSort(tasks, lastFilter, true, sortType, order);
+    };
+    // Unified search handler
+    const handleSearch = (e) => {
+        setSearch(e.target.value);
+        applyCurrentFilterAndSort(tasks, lastFilter, true, sortType, sortOrder, e.target.value);
     };
 
     // --- Effects ---
@@ -319,30 +265,23 @@ export function useTodoLogic() {
         };
     }, []);
 
+    // Unified event handler for contract events
+    const handleContractEvent = () => {
+        getMyTasks(todoWeb3, true, true); // keepPage=true, keepFilter=true
+    };
+
     // Listen for contract events
     useEffect(() => {
         if (!todoWeb3) return;
-        const onTaskCreated = (id, content, completed, event) => {
-            if (event && event.args && event.address === todoWeb3.address) getMyTasks(todoWeb3);
-        };
-        const onTaskCompleted = (id, completed, event) => {
-            if (event && event.args && event.address === todoWeb3.address) getMyTasks(todoWeb3);
-        };
-        const onTaskDeleted = (id, event) => {
-            if (event && event.args && event.address === todoWeb3.address) getMyTasks(todoWeb3);
-        };
-        const onTasksCleared = (id_arr, event) => {
-            if (event && event.args && event.address === todoWeb3.address) getMyTasks(todoWeb3);
-        };
-        todoWeb3.on("TaskCreated", onTaskCreated);
-        todoWeb3.on("TaskCompleted", onTaskCompleted);
-        todoWeb3.on("TaskDeleted", onTaskDeleted);
-        todoWeb3.on("TasksCleared", onTasksCleared);
+        todoWeb3.on("TaskCreated", handleContractEvent);
+        todoWeb3.on("TaskCompleted", handleContractEvent);
+        todoWeb3.on("TaskDeleted", handleContractEvent);
+        todoWeb3.on("TasksCleared", handleContractEvent);
         return () => {
-            todoWeb3.off("TaskCreated", onTaskCreated);
-            todoWeb3.off("TaskCompleted", onTaskCompleted);
-            todoWeb3.off("TaskDeleted", onTaskDeleted);
-            todoWeb3.off("TasksCleared", onTasksCleared);
+            todoWeb3.off("TaskCreated", handleContractEvent);
+            todoWeb3.off("TaskCompleted", handleContractEvent);
+            todoWeb3.off("TaskDeleted", handleContractEvent);
+            todoWeb3.off("TasksCleared", handleContractEvent);
         };
     }, [todoWeb3, account, activeFilter]);
 
@@ -394,18 +333,28 @@ export function useTodoLogic() {
         checkOrRequestWalletConnection,
         loadBlockchainData,
         getMyTasks,
-        applyCurrentFilter,
+        applyCurrentFilter: applyCurrentFilterAndSort,
         handleChange,
         addTask,
         deleteTask,
         clearCompleted,
         handleToggleCompleted,
+        toggleTaskPrivacy,
         filterTasks,
         handleKeyDown,
         handleSubmit,
         paginatedTasks,
         totalPages,
         warnPopup,
-        setWarnPopup
+        setWarnPopup,
+        sortType,
+        setSortType: handleSortTypeChange,
+        sortOrder,
+        setSortOrder: handleSortOrderChange,
+        search,
+        setSearch,
+        handleSearch,
+        lastFilter,
+        setLastFilter
     };
 }

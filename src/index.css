@@ -189,23 +189,25 @@ li {
   font-size: 17px;
   margin-bottom: 18px;
   padding-bottom: 16px;
-  align-items: flex-start;
+  align-items: center;
+  min-height: var(--task-min-height);
+  display: flex;
+  width: 100%;
+  box-sizing: border-box;
   border-bottom: 1px solid #ccc;
 }
 
 .task-box .task:last-child {
-  margin-bottom: 0;
-  border-bottom: 0;
-  padding-bottom: 0;
+  border-bottom: none;
 }
 
 .task-box .task label {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
 }
 
 .task label input {
-  margin-top: 7px;
+  margin-top: 0;
   accent-color: #f12711;
 }
 
@@ -219,8 +221,13 @@ li {
   text-decoration: line-through;
 }
 
-.task-box .settings {
-  position: relative;
+/* Removed .task-box .settings rule to prevent layout interference with fixed menu */
+
+.settings {
+  position: fixed !important;
+  z-index: 2000 !important;
+  top: unset !important;
+  left: unset !important;
 }
 
 .settings :where(i, li) {
@@ -236,7 +243,6 @@ li {
   font-family: unicons-line;
   font-style: normal;
   font-weight: 400;
-  speak: none;
   display: inline-block;
   text-decoration: inherit;
   font-variant: normal;
@@ -246,18 +252,10 @@ li {
   -moz-osx-font-smoothing: grayscale;
 }
 
-.settings .task-menu {
-  position: absolute;
-  right: -5px;
-  bottom: -65px;
-  padding: 5px 0;
-  background: #fff;
-  border-radius: 4px;
-  transform: scale(0);
-  transform-origin: top right;
-  box-shadow: 0 0 6px rgba(0, 0, 0, 0.15);
-  transition: transform 0.2s ease;
-  z-index: 10;
+/* Removed .settings .task-menu rule to prevent interference with fixed positioning */
+
+.task-menu.show {
+  transform: scale(1);
 }
 
 .task-box .task:last-child .task-menu {
@@ -289,6 +287,7 @@ li {
 
 .settings li:hover {
   background: #f5f5f5;
+  color: #f12711; /* Theme color for highlight in light mode */
 }
 
 .settings li i {
