@@ -1,42 +1,51 @@
-# todo-web3
-Web3 based Todo app in Solidity, Ethereum, Hardhat, React
+# Eksamensinnlevering Web3-basert Todo-app i Solidity, Ethereum, Hardhat, React
+Av: Daniel Hao Huynh, og Mikael Fossli
 
-https://user-images.githubusercontent.com/4313602/208738742-85e8b1ed-68d2-4362-9242-aa4d1c6bfa3c.mp4
+## Funkjsonelle Krav:
+- id; Vi bruker da UUID i vår Todo Dapp som er klart bedre enn id, spesielt i en web3/blockchain-kontekst hvor desentralisering, global unikhet og sikkerhet er viktig. Det gir også bedre brukeropplevelse og enklere vedlikehold av kodebasen.
+  - Global unikhet
+  - Desentralisert generering
+  - Ingen behov for id-teller på blockchain
+  - Ingen risiko for kollisjon eller gjenbruk
+  - Bedre sikkerhet og anonymitet
+  - Bedre brukeropplevelse (optimistic UI)
+  - Skalerbarhet på tvers av systemer og kontrakter
+- description; Vi har da bare implementert en allminnelig string som lagrer innholdene til Taskene.
+- createdAt; Taskene lagrer da datoen og tidsstempel på når de ble opprettet.
+- completed; en Boolean som definerer om Tasken er ferdig eller ikke.
+- completedAt; dynamisk variabel som lagrer stempel på når en task ble ferdig, endrer seg hver gang completed blir togglet.
+- user; eieren av tasken, kun brukeren kan endre på tasken og slette den, men alle kan markere den som ferdig.
+- private; om tasken er synlig for andre enn eieren.
 
+## Teknologi-stack & Verktøy
 
-## Technology Stack & Tools
-
-- Solidity (Writing Smart Contracts & Tests)
+- Solidity (Skriving av smarte kontrakter og tester)
 - Javascript (React & Testing)
-- [Hardhat](https://hardhat.org/) (Development Framework)
-- [Ethers.js](https://docs.ethers.io/v5/) (Blockchain Interaction)
-- [React.js](https://reactjs.org/) (Frontend Framework)
+- [Hardhat](https://hardhat.org/) (Utviklingsrammeverk)
+- [Ethers.js](https://docs.ethers.io/v5/) (Blockchain-interaksjon)
+- [React.js](https://reactjs.org/) (Frontend-rammeverk)
 
-## Requirements For Initial Setup
-- Install [NodeJS](https://nodejs.org/en/)
+## Krav for første oppsett
+- Installer [NodeJS](https://nodejs.org/en/)
 
-## Setting Up
-### 1. Clone/Download the Repository
+## Oppsett
+### 1. Klon/last ned repoet
 
-### 2. Install Dependencies:
+### 2. Installer avhengigheter:
 `$ npm install`
 
-### 3. Run tests
+### 3. Kjør tester
 `$ npx hardhat test`
 
-### 4. Start Hardhat node
+### 4. Start Hardhat-node
 `$ npx hardhat node`
 
-### 5. Run deployment script
-In a separate terminal execute:
+### 5. Kjør deploy-script
+I et eget terminalvindu, kjør:
 `$ npx hardhat run ./scripts/deploy.js --network localhost`
 
 ### 7. Start frontend
 `$ npm run start`
 
-
-## Stay in touch
-- Author - [Akash Singhal](https://akashsinghal.simple.ink/)
-
-### Acknowledgments
-Big Thanks to [Dapp University](https://www.dappuniversity.com/) and [Gregory](https://www.twitter.com/DappUniversity)!
+### Takk til
+Stor takk til skaperen av malen – [Akash Singhal](https://akashsinghal.simple.ink/) [Dapp University](https://www.dappuniversity.com/) og [Gregory](https://www.twitter.com/DappUniversity)!
