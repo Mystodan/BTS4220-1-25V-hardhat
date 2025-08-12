@@ -1,5 +1,5 @@
-# Eksamensinnlevering Web3-basert Todo-app i Solidity, Ethereum, Hardhat, React
-Av: Kandidat 8033, og Kandidat 8004
+# Web3-basert Todo-app i Solidity, Ethereum, Hardhat, React
+Av: Daniel Hao Huynh, og Mikael Fossli
 
 ## Funkjsonelle Krav:
 - id; Vi bruker da UUID i vår Todo Dapp som er klart bedre enn id, spesielt i en web3/blockchain-kontekst hvor desentralisering, global unikhet og sikkerhet er viktig. Det gir også bedre brukeropplevelse og enklere vedlikehold av kodebasen.
